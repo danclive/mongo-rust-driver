@@ -17,7 +17,11 @@ impl StreamConnector {
     pub fn connect(&self, hostname: &str, port: u16) -> Result<TcpStream> {
         match *self {
             StreamConnector::Tcp => {
-                TcpStream::connect((hostname, port))
+                let socket = TcpStream::connect((hostname, port))?;
+
+                socket.set_nodelay(true)?;
+
+                Ok(socket)
             }
         }
     }
