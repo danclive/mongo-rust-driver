@@ -627,7 +627,7 @@ impl Collection {
         }
 
         update_command.insert("writeConcern", write_concern.to_document());
-        update_command.insert("update", updates);
+        update_command.insert("updates", updates);
 
         let result = self.db.command(update_command, CommandType::Update, None)?;
 
