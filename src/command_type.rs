@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum CommandType {
     Aggregate,
     BuildInfo,

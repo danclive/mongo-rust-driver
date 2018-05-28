@@ -11,6 +11,7 @@ use db::Database;
 // Allows the server to decide the batch size.
 pub const DEFAULT_BATCH_SIZE: i32 = 100;
 
+#[derive(Debug)]
 pub struct Cursor {
     pub db: Database,
     // The namespace to read and write from.

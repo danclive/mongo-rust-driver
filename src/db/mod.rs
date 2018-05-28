@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::sync::Arc;
 use std::time::Instant;
+use std::fmt;
+use std::result;
 
 use bson::{self, Bson, Document};
 use auth::Authenticator;
@@ -510,5 +512,11 @@ impl Database {
         }
 
         Ok(users)
+    }
+}
+
+impl fmt::Debug for Database {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "{}", self.inner.name)
     }
 }
