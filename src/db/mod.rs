@@ -2,7 +2,6 @@ use std::error::Error;
 use std::sync::Arc;
 use std::time::Instant;
 use std::fmt;
-use std::result;
 
 use bson::{self, Bson, Document};
 use auth::Authenticator;
