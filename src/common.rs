@@ -39,13 +39,13 @@ pub struct ReadPreference {
 impl ReadPreference {
     pub fn new(mode: ReadMode, tag_sets: Option<Vec<BTreeMap<String, String>>>) -> ReadPreference {
         ReadPreference {
-            mode: mode,
+            mode,
             tag_sets: tag_sets.unwrap_or_else(Vec::new),
         }
     }
 
     pub fn to_document(&self) -> Document {
-        let mut doc = doc!{ "mode": (stringify!(self.mode).to_ascii_lowercase()) };
+        let mut doc = doc!{ "mode": stringify!(self.mode).to_ascii_lowercase() };
         let bson_tag_sets: Vec<_> = self.tag_sets
             .iter()
             .map(|map| {
@@ -124,11 +124,11 @@ pub enum ReadConcernLevel {
 
 impl ReadConcernLevel {
     pub fn to_string(&self) -> String {
-        match self {
-            &ReadConcernLevel::Local => "local".to_owned(),
-            &ReadConcernLevel::Available => "available".to_owned(),
-            &ReadConcernLevel::Majority => "majority".to_owned(),
-            &ReadConcernLevel::Linearizable => "linearizable".to_owned()
+        match *self {
+            ReadConcernLevel::Local => "local".to_owned(),
+            ReadConcernLevel::Available => "available".to_owned(),
+            ReadConcernLevel::Majority => "majority".to_owned(),
+            ReadConcernLevel::Linearizable => "linearizable".to_owned()
         }
     }
 }

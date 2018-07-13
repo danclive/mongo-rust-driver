@@ -64,13 +64,19 @@ const PADDING: [u8; 64] = [
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
 
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Context {
     /// Create a context for computing a digest.
     #[inline]
     pub fn new() -> Context {
         Context {
             handled: [0, 0],
-            buffer: [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476],
+            buffer: [0x6745_2301, 0xefcd_ab89, 0x98ba_dcfe, 0x1032_5476],
             input: unsafe { mem::uninitialized() },
         }
     }
@@ -95,13 +101,16 @@ impl Context {
                 continue;
             }
             let mut j = 0;
-            for i in 0..16 {
-                input[i] = ((self.input[j + 3] as u32) << 24) |
-                           ((self.input[j + 2] as u32) << 16) |
-                           ((self.input[j + 1] as u32) <<  8) |
-                           ((self.input[j    ] as u32)      );
+
+            for item in input.iter_mut().take(16) {
+                *item = (u32::from(self.input[j + 3]) << 24) |
+                        (u32::from(self.input[j + 2]) << 16) |
+                        (u32::from(self.input[j + 1]) <<  8) |
+                        u32::from(self.input[j    ]);
+
                 j += 4;
             }
+
             transform(&mut self.buffer, &input);
             k = 0;
         }
@@ -118,11 +127,11 @@ impl Context {
         self.consume(&PADDING[..(if k < 56 { 56 - k } else { 120 - k })]);
 
         let mut j = 0;
-        for i in 0..14 {
-            input[i] = ((self.input[j + 3] as u32) << 24) |
-                       ((self.input[j + 2] as u32) << 16) |
-                       ((self.input[j + 1] as u32) <<  8) |
-                       ((self.input[j    ] as u32)      );
+        for item in input.iter_mut().take(14) {
+            *item = (u32::from(self.input[j + 3]) << 24) |
+                       (u32::from(self.input[j + 2]) << 16) |
+                       (u32::from(self.input[j + 1]) <<  8) |
+                       u32::from(self.input[j    ]);
             j += 4;
         }
         transform(&mut self.buffer, &input);
@@ -204,22 +213,22 @@ fn transform(buffer: &mut [u32; 4], input: &[u32; 16]) {
         const S3: u32 = 17;
         const S4: u32 = 22;
 
-        T!(a, b, c, d, input[ 0], S1, 3614090360);
-        T!(d, a, b, c, input[ 1], S2, 3905402710);
-        T!(c, d, a, b, input[ 2], S3,  606105819);
-        T!(b, c, d, a, input[ 3], S4, 3250441966);
-        T!(a, b, c, d, input[ 4], S1, 4118548399);
-        T!(d, a, b, c, input[ 5], S2, 1200080426);
-        T!(c, d, a, b, input[ 6], S3, 2821735955);
-        T!(b, c, d, a, input[ 7], S4, 4249261313);
-        T!(a, b, c, d, input[ 8], S1, 1770035416);
-        T!(d, a, b, c, input[ 9], S2, 2336552879);
-        T!(c, d, a, b, input[10], S3, 4294925233);
-        T!(b, c, d, a, input[11], S4, 2304563134);
-        T!(a, b, c, d, input[12], S1, 1804603682);
-        T!(d, a, b, c, input[13], S2, 4254626195);
-        T!(c, d, a, b, input[14], S3, 2792965006);
-        T!(b, c, d, a, input[15], S4, 1236535329);
+        T!(a, b, c, d, input[ 0], S1, 3_614_090_360);
+        T!(d, a, b, c, input[ 1], S2, 3_905_402_710);
+        T!(c, d, a, b, input[ 2], S3,  606_105_819);
+        T!(b, c, d, a, input[ 3], S4, 3_250_441_966);
+        T!(a, b, c, d, input[ 4], S1, 4_118_548_399);
+        T!(d, a, b, c, input[ 5], S2, 1_200_080_426);
+        T!(c, d, a, b, input[ 6], S3, 2_821_735_955);
+        T!(b, c, d, a, input[ 7], S4, 4_249_261_313);
+        T!(a, b, c, d, input[ 8], S1, 1_770_035_416);
+        T!(d, a, b, c, input[ 9], S2, 2_336_552_879);
+        T!(c, d, a, b, input[10], S3, 4_294_925_233);
+        T!(b, c, d, a, input[11], S4, 2_304_563_134);
+        T!(a, b, c, d, input[12], S1, 1_804_603_682);
+        T!(d, a, b, c, input[13], S2, 4_254_626_195);
+        T!(c, d, a, b, input[14], S3, 2_792_965_006);
+        T!(b, c, d, a, input[15], S4, 1_236_535_329);
     }
 
     {
@@ -239,22 +248,22 @@ fn transform(buffer: &mut [u32; 4], input: &[u32; 16]) {
         const S3: u32 = 14;
         const S4: u32 = 20;
 
-        T!(a, b, c, d, input[ 1], S1, 4129170786);
-        T!(d, a, b, c, input[ 6], S2, 3225465664);
-        T!(c, d, a, b, input[11], S3,  643717713);
-        T!(b, c, d, a, input[ 0], S4, 3921069994);
-        T!(a, b, c, d, input[ 5], S1, 3593408605);
-        T!(d, a, b, c, input[10], S2,   38016083);
-        T!(c, d, a, b, input[15], S3, 3634488961);
-        T!(b, c, d, a, input[ 4], S4, 3889429448);
-        T!(a, b, c, d, input[ 9], S1,  568446438);
-        T!(d, a, b, c, input[14], S2, 3275163606);
-        T!(c, d, a, b, input[ 3], S3, 4107603335);
-        T!(b, c, d, a, input[ 8], S4, 1163531501);
-        T!(a, b, c, d, input[13], S1, 2850285829);
-        T!(d, a, b, c, input[ 2], S2, 4243563512);
-        T!(c, d, a, b, input[ 7], S3, 1735328473);
-        T!(b, c, d, a, input[12], S4, 2368359562);
+        T!(a, b, c, d, input[ 1], S1, 4_129_170_786);
+        T!(d, a, b, c, input[ 6], S2, 3_225_465_664);
+        T!(c, d, a, b, input[11], S3,  643_717_713);
+        T!(b, c, d, a, input[ 0], S4, 3_921_069_994);
+        T!(a, b, c, d, input[ 5], S1, 3_593_408_605);
+        T!(d, a, b, c, input[10], S2,   38_016_083);
+        T!(c, d, a, b, input[15], S3, 3_634_488_961);
+        T!(b, c, d, a, input[ 4], S4, 3_889_429_448);
+        T!(a, b, c, d, input[ 9], S1,  568_446_438);
+        T!(d, a, b, c, input[14], S2, 3_275_163_606);
+        T!(c, d, a, b, input[ 3], S3, 4_107_603_335);
+        T!(b, c, d, a, input[ 8], S4, 1_163_531_501);
+        T!(a, b, c, d, input[13], S1, 2_850_285_829);
+        T!(d, a, b, c, input[ 2], S2, 4_243_563_512);
+        T!(c, d, a, b, input[ 7], S3, 1_735_328_473);
+        T!(b, c, d, a, input[12], S4, 2_368_359_562);
     }
 
     {
@@ -274,22 +283,22 @@ fn transform(buffer: &mut [u32; 4], input: &[u32; 16]) {
         const S3: u32 = 16;
         const S4: u32 = 23;
 
-        T!(a, b, c, d, input[ 5], S1, 4294588738);
-        T!(d, a, b, c, input[ 8], S2, 2272392833);
-        T!(c, d, a, b, input[11], S3, 1839030562);
-        T!(b, c, d, a, input[14], S4, 4259657740);
-        T!(a, b, c, d, input[ 1], S1, 2763975236);
-        T!(d, a, b, c, input[ 4], S2, 1272893353);
-        T!(c, d, a, b, input[ 7], S3, 4139469664);
-        T!(b, c, d, a, input[10], S4, 3200236656);
-        T!(a, b, c, d, input[13], S1,  681279174);
-        T!(d, a, b, c, input[ 0], S2, 3936430074);
-        T!(c, d, a, b, input[ 3], S3, 3572445317);
-        T!(b, c, d, a, input[ 6], S4,   76029189);
-        T!(a, b, c, d, input[ 9], S1, 3654602809);
-        T!(d, a, b, c, input[12], S2, 3873151461);
-        T!(c, d, a, b, input[15], S3,  530742520);
-        T!(b, c, d, a, input[ 2], S4, 3299628645);
+        T!(a, b, c, d, input[ 5], S1, 4_294_588_738);
+        T!(d, a, b, c, input[ 8], S2, 2_272_392_833);
+        T!(c, d, a, b, input[11], S3, 1_839_030_562);
+        T!(b, c, d, a, input[14], S4, 4_259_657_740);
+        T!(a, b, c, d, input[ 1], S1, 2_763_975_236);
+        T!(d, a, b, c, input[ 4], S2, 1_272_893_353);
+        T!(c, d, a, b, input[ 7], S3, 4_139_469_664);
+        T!(b, c, d, a, input[10], S4, 3_200_236_656);
+        T!(a, b, c, d, input[13], S1,  681_279_174);
+        T!(d, a, b, c, input[ 0], S2, 3_936_430_074);
+        T!(c, d, a, b, input[ 3], S3, 3_572_445_317);
+        T!(b, c, d, a, input[ 6], S4,   76_029_189);
+        T!(a, b, c, d, input[ 9], S1, 3_654_602_809);
+        T!(d, a, b, c, input[12], S2, 3_873_151_461);
+        T!(c, d, a, b, input[15], S3,  530_742_520);
+        T!(b, c, d, a, input[ 2], S4, 3_299_628_645);
     }
 
     {
@@ -309,22 +318,22 @@ fn transform(buffer: &mut [u32; 4], input: &[u32; 16]) {
         const S3: u32 = 15;
         const S4: u32 = 21;
 
-        T!(a, b, c, d, input[ 0], S1, 4096336452);
-        T!(d, a, b, c, input[ 7], S2, 1126891415);
-        T!(c, d, a, b, input[14], S3, 2878612391);
-        T!(b, c, d, a, input[ 5], S4, 4237533241);
-        T!(a, b, c, d, input[12], S1, 1700485571);
-        T!(d, a, b, c, input[ 3], S2, 2399980690);
-        T!(c, d, a, b, input[10], S3, 4293915773);
-        T!(b, c, d, a, input[ 1], S4, 2240044497);
-        T!(a, b, c, d, input[ 8], S1, 1873313359);
-        T!(d, a, b, c, input[15], S2, 4264355552);
-        T!(c, d, a, b, input[ 6], S3, 2734768916);
-        T!(b, c, d, a, input[13], S4, 1309151649);
-        T!(a, b, c, d, input[ 4], S1, 4149444226);
-        T!(d, a, b, c, input[11], S2, 3174756917);
-        T!(c, d, a, b, input[ 2], S3,  718787259);
-        T!(b, c, d, a, input[ 9], S4, 3951481745);
+        T!(a, b, c, d, input[ 0], S1, 4_096_336_452);
+        T!(d, a, b, c, input[ 7], S2, 1_126_891_415);
+        T!(c, d, a, b, input[14], S3, 2_878_612_391);
+        T!(b, c, d, a, input[ 5], S4, 4_237_533_241);
+        T!(a, b, c, d, input[12], S1, 1_700_485_571);
+        T!(d, a, b, c, input[ 3], S2, 2_399_980_690);
+        T!(c, d, a, b, input[10], S3, 4_293_915_773);
+        T!(b, c, d, a, input[ 1], S4, 2_240_044_497);
+        T!(a, b, c, d, input[ 8], S1, 1_873_313_359);
+        T!(d, a, b, c, input[15], S2, 4_264_355_552);
+        T!(c, d, a, b, input[ 6], S3, 2_734_768_916);
+        T!(b, c, d, a, input[13], S4, 1_309_151_649);
+        T!(a, b, c, d, input[ 4], S1, 4_149_444_226);
+        T!(d, a, b, c, input[11], S2, 3_174_756_917);
+        T!(c, d, a, b, input[ 2], S3,  718_787_259);
+        T!(b, c, d, a, input[ 9], S4, 3_951_481_745);
     }
 
     buffer[0] = add!(buffer[0], a);

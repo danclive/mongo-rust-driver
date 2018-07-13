@@ -37,7 +37,7 @@ struct AuthData {
 impl Authenticator {
     /// Creates a new authenticator.
     pub fn new(db: Database) -> Authenticator {
-        Authenticator { db: db }
+        Authenticator { db }
     }
 
     /// Authenticates a user-password pair against a database.
@@ -45,7 +45,7 @@ impl Authenticator {
         let initial_data = self.start(user)?;
         let conversation_id = initial_data.conversation_id.clone();
         let full_password = format!("{}:mongo:{}", user, password);
-        let auth_data = self.next(full_password, initial_data)?;
+        let auth_data = self.next(&full_password, &initial_data)?;
 
         self.finish(conversation_id, auth_data)
     }
@@ -65,7 +65,7 @@ impl Authenticator {
             "mechanism": "SCRAM-SHA-1"
         };
 
-        let doc = self.db.command(start_doc, Suppressed, None)?;
+        let doc = self.db.command(start_doc, &Suppressed, None)?;
 
         let data = match doc.get("payload") {
             Some(&Binary(_, ref payload)) => payload.clone(),
@@ -83,16 +83,16 @@ impl Authenticator {
         };
 
         Ok(InitialData {
-            message: message,
-            response: response,
-            nonce: nonce,
+            message,
+            response,
+            nonce,
             conversation_id: id,
         })
     }
 
-    fn next(&self, password: String, initial_data: InitialData) -> Result<AuthData> {
+    fn next(&self, password: &str, initial_data: &InitialData) -> Result<AuthData> {
         // Parse out rnonce, salt, and iteration count
-        let response: Vec<&str> = initial_data.response.split(",").collect();
+        let response: Vec<&str> = initial_data.response.split(',').collect();
 
         if response.len() != 3 {
             return Err(ResponseError("Invalid response returned".to_string()));
@@ -205,12 +205,12 @@ impl Authenticator {
             "conversationId": initial_data.conversation_id.clone()
         };
 
-        let response = self.db.command(next_doc, Suppressed, None)?;
+        let response = self.db.command(next_doc, &Suppressed, None)?;
 
         Ok(AuthData {
-            salted_password: salted_password,
+            salted_password,
             message: auth_message,
-            response: response,
+            response,
         })
     }
 
@@ -255,7 +255,7 @@ impl Authenticator {
                 }
             }
 
-            doc = self.db.command(final_doc.clone(), Suppressed, None)?;
+            doc = self.db.command(final_doc.clone(), &Suppressed, None)?;
 
             if let Some(&Bson::Boolean(true)) = doc.get("done") {
                 return Ok(());

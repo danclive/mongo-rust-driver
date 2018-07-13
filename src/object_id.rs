@@ -9,7 +9,7 @@ use std::io;
 use chrono;
 use byteorder::{ByteOrder, BigEndian, LittleEndian};
 use libc;
-use rand::{Rng, OsRng};
+use rand::{self, Rng, OsRng};
 
 use util::hex::{ToHex, FromHex, FromHexError};
 use util::md5;
@@ -26,7 +26,7 @@ const TIMESTAMP_OFFSET: usize = 0;
 const MACHINE_ID_OFFSET: usize = TIMESTAMP_OFFSET + TIMESTAMP_SIZE;
 const PROCESS_ID_OFFSET: usize = MACHINE_ID_OFFSET + MACHINE_ID_SIZE;
 const COUNTER_OFFSET: usize = PROCESS_ID_OFFSET + PROCESS_ID_SIZE;
-const MAX_U24: usize = 0xFFFFFF;
+const MAX_U24: usize = 0x00FF_FFFF;
 
 static OID_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
 static mut MACHINE_BYTES: Option<[u8; 3]> = None;
@@ -36,7 +36,8 @@ pub enum Error {
     ArgumentError(String),
     HostnameError,
     FromHexError(FromHexError),
-    IoError(io::Error)
+    IoError(io::Error),
+    RandError(rand::Error)
 }
 
 impl From<FromHexError> for Error {
@@ -51,6 +52,12 @@ impl From<io::Error> for Error {
     }
 }
 
+impl From<rand::Error> for Error {
+    fn from(err: rand::Error) -> Error {
+        Error::RandError(err)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -58,6 +65,7 @@ impl fmt::Display for Error {
             Error::HostnameError => write!(fmt, "Failed to retrieve hostname for OID generation."),
             Error::FromHexError(ref err) => err.fmt(fmt),
             Error::IoError(ref inner) => inner.fmt(fmt),
+            Error::RandError(ref inner) => inner.fmt(fmt)
         }
     }
 }
@@ -68,7 +76,8 @@ impl error::Error for Error {
             Error::ArgumentError(ref err) => &err,
             Error::HostnameError => "Failed to retrieve hostname for OID generation.",
             Error::FromHexError(ref err) => err.description(),
-            Error::IoError(ref err) => err.description()
+            Error::IoError(ref err) => err.description(),
+            Error::RandError(ref err) => err.description()
         }
     }
 
@@ -77,7 +86,8 @@ impl error::Error for Error {
             Error::ArgumentError(_) => None,
             Error::HostnameError => None,
             Error::FromHexError(ref err) => Some(err),
-            Error::IoError(ref err) => Some(err)
+            Error::IoError(ref err) => Some(err),
+            Error::RandError(ref err) => Some(err)
         }
     }
 }
@@ -119,18 +129,10 @@ impl ObjectId {
         let counter = gen_count()?;
         let mut buf: [u8; 12] = [0; 12];
 
-        for i in 0..TIMESTAMP_SIZE {
-            buf[TIMESTAMP_OFFSET + i] = timestamp[i];
-        }
-        for i in 0..MACHINE_ID_SIZE {
-            buf[MACHINE_ID_OFFSET + i] = machine_id[i];
-        }
-        for i in 0..PROCESS_ID_SIZE {
-            buf[PROCESS_ID_OFFSET + i] = process_id[i];
-        }
-        for i in 0..COUNTER_SIZE {
-            buf[COUNTER_OFFSET + i] = counter[i];
-        }
+        buf[TIMESTAMP_OFFSET..(TIMESTAMP_SIZE + TIMESTAMP_OFFSET)].clone_from_slice(&timestamp[..TIMESTAMP_SIZE]);
+        buf[MACHINE_ID_OFFSET..(MACHINE_ID_SIZE + MACHINE_ID_OFFSET)].clone_from_slice(&machine_id[..MACHINE_ID_SIZE]);
+        buf[PROCESS_ID_OFFSET..(PROCESS_ID_SIZE + PROCESS_ID_OFFSET)].clone_from_slice(&process_id[..PROCESS_ID_SIZE]);
+        buf[COUNTER_OFFSET..(COUNTER_SIZE + COUNTER_OFFSET)].clone_from_slice(&counter[..COUNTER_SIZE]);
 
         Ok(ObjectId::with_bytes(buf))
     }
@@ -168,9 +170,7 @@ impl ObjectId {
             Err(Error::ArgumentError("Provided string must be a 12-byte hexadecimal string.".to_string()))
         } else {
             let mut byte_array: [u8; 12] = [0; 12];
-            for i in 0..12 {
-                byte_array[i] = bytes[i];
-            }
+            byte_array[..12].clone_from_slice(&bytes[0..12]);
             Ok(ObjectId::with_bytes(byte_array))
         }
     }
@@ -188,9 +188,7 @@ impl ObjectId {
     /// Machine ID of this ObjectId
     pub fn machine_id(&self) -> u32 {
         let mut buf: [u8; 4] = [0; 4];
-        for i in 0..MACHINE_ID_SIZE {
-            buf[i] = self.id[MACHINE_ID_OFFSET + i];
-        }
+        buf[..MACHINE_ID_SIZE].clone_from_slice(&self.id[MACHINE_ID_OFFSET..(MACHINE_ID_SIZE + MACHINE_ID_OFFSET)]);
         LittleEndian::read_u32(&buf)
     }
 
@@ -231,7 +229,7 @@ fn gen_machine_id() -> Result<[u8; 3]> {
     
     unsafe {
         if let Some(bytes) = MACHINE_BYTES.as_ref() {
-            return Ok(bytes.clone());
+            return Ok(*bytes);
         }
     }
 
@@ -246,9 +244,9 @@ fn gen_machine_id() -> Result<[u8; 3]> {
 
     let mut vec: [u8; 3] = [0; 3];
 
-    for i in 0..MACHINE_ID_SIZE {
+    for item in vec.iter_mut().take(MACHINE_ID_SIZE) {
         match bytes.next() {
-            Some(b) => vec[i] = *b,
+            Some(b) => *item = *b,
             None => break
         }
     }
@@ -301,7 +299,7 @@ fn get_hosename() -> Option<String> {
             return None;
         }
 
-        return Some(CStr::from_ptr(ptr).to_string_lossy().to_string());
+        Some(CStr::from_ptr(ptr).to_string_lossy().to_string())
     }
 }
 

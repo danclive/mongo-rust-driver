@@ -234,10 +234,10 @@ impl Server {
         }
 
         Server {
-            host: host,
-            pool: pool,
+            host,
+            pool,
             description: description.clone(),
-            monitor: monitor,
+            monitor,
         }
     }
 

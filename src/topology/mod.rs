@@ -511,32 +511,32 @@ impl TopologyDescription {
     /// Update the topology description, but don't start any monitors for new servers.
     pub fn update_without_monitor(
         &mut self,
-        host: Host,
-        description: Arc<RwLock<ServerDescription>>,
-        client: MongoClient,
-        top_arc: Arc<RwLock<TopologyDescription>>)
+        host: &Host,
+        description: &Arc<RwLock<ServerDescription>>,
+        client: &MongoClient,
+        top_arc: &Arc<RwLock<TopologyDescription>>)
     {
-        self.update_private(host, description, client, top_arc, false);
+        self.update_private(&host, &description, &client, &top_arc, false);
     }
 
     /// Updates the topology description based on an updated server description.
     pub fn update(
         &mut self,
-        host: Host,
-        description: Arc<RwLock<ServerDescription>>,
-        client: MongoClient,
-        top_arc: Arc<RwLock<TopologyDescription>>)
+        host: &Host,
+        description: &Arc<RwLock<ServerDescription>>,
+        client: &MongoClient,
+        top_arc: &Arc<RwLock<TopologyDescription>>)
     {
-        self.update_private(host, description, client, top_arc, true);
+        self.update_private(&host, &description, &client, &top_arc, true);
     }
 
     // Internal topology description update helper.
     fn update_private(
         &mut self,
-        host: Host,
-        description: Arc<RwLock<ServerDescription>>,
-        client: MongoClient,
-        top_arc: Arc<RwLock<TopologyDescription>>,
+        host: &Host,
+        description: &Arc<RwLock<ServerDescription>>,
+        client: &MongoClient,
+        top_arc: &Arc<RwLock<TopologyDescription>>,
         run_monitor: bool
     ) {
 
@@ -544,17 +544,17 @@ impl TopologyDescription {
         match self.topology_type {
             TopologyType::Unknown => {
                 match stype {
-                    ServerType::Standalone => self.update_unknown_with_standalone(host),
+                    ServerType::Standalone => self.update_unknown_with_standalone(&host),
                     ServerType::Mongos => self.topology_type = TopologyType::Sharded,
                     ServerType::RSPrimary => {
-                        self.update_rs_from_primary(host, description, client, top_arc, run_monitor)
+                        self.update_rs_from_primary(&host, &description, &client, &top_arc, run_monitor)
                     }
                     ServerType::RSSecondary | ServerType::RSArbiter | ServerType::RSOther => {
                         self.update_rs_without_primary(
-                            host,
-                            description,
-                            client,
-                            top_arc,
+                            &host,
+                            &description,
+                            &client,
+                            &top_arc,
                             run_monitor
                         )
                     }
@@ -568,14 +568,14 @@ impl TopologyDescription {
                         self.check_if_has_primary();
                     }
                     ServerType::RSPrimary => {
-                        self.update_rs_from_primary(host, description, client, top_arc, run_monitor)
+                        self.update_rs_from_primary(&host, &description, &client, &top_arc, run_monitor)
                     }
                     ServerType::RSSecondary | ServerType::RSArbiter | ServerType::RSOther => {
                         self.update_rs_without_primary(
-                            host,
-                            description,
-                            client,
-                            top_arc,
+                            &host,
+                            &description,
+                            &client,
+                            &top_arc,
                             run_monitor
                         )
                     }
@@ -589,10 +589,10 @@ impl TopologyDescription {
                         self.check_if_has_primary();
                     }
                     ServerType::RSPrimary => {
-                        self.update_rs_from_primary(host, description, client, top_arc, run_monitor)
+                        self.update_rs_from_primary(&host, &description, &client, &top_arc, run_monitor)
                     }
                     ServerType::RSSecondary | ServerType::RSArbiter | ServerType::RSOther => {
-                        self.update_rs_with_primary_from_member(host, description)
+                        self.update_rs_with_primary_from_member(&host, &description)
                     }
                     _ => self.check_if_has_primary(),
                 }
@@ -630,7 +630,7 @@ impl TopologyDescription {
 
 
     // Updates an unknown topology with a new standalone server description.
-    fn update_unknown_with_standalone(&mut self, host: Host) {
+    fn update_unknown_with_standalone(&mut self, host: &Host) {
         if !self.servers.contains_key(&host) {
             return;
         }
@@ -645,10 +645,10 @@ impl TopologyDescription {
     // Updates a replica set topology with a new primary server description.
     fn update_rs_from_primary(
         &mut self,
-        host: Host,
-        description: Arc<RwLock<ServerDescription>>,
-        client: MongoClient,
-        top_arc: Arc<RwLock<TopologyDescription>>,
+        host: &Host,
+        description: &Arc<RwLock<ServerDescription>>,
+        client: &MongoClient,
+        top_arc: &Arc<RwLock<TopologyDescription>>,
         run_monitor: bool
     ) {
 
@@ -707,7 +707,7 @@ impl TopologyDescription {
 
         // Invalidate any old primaries
         for (top_host, server) in &self.servers {
-            if *top_host != host {
+            if top_host != host {
                 let mut server_description = server.description.write().unwrap();
                 if server_description.server_type == ServerType::RSPrimary {
                     server_description.server_type = ServerType::Unknown;
@@ -717,7 +717,7 @@ impl TopologyDescription {
             }
         }
 
-        self.add_missing_hosts(description.clone(), client, top_arc, run_monitor);
+        self.add_missing_hosts(&description, &client, &top_arc, run_monitor);
 
         let valid_hosts: Vec<_> = {
             let description_guard = description.read().unwrap();
@@ -736,10 +736,10 @@ impl TopologyDescription {
     // Updates a replica set topology with a missing primary.
     fn update_rs_without_primary(
         &mut self,
-        host: Host,
-        description: Arc<RwLock<ServerDescription>>,
-        client: MongoClient,
-        top_arc: Arc<RwLock<TopologyDescription>>,
+        host: &Host,
+        description: &Arc<RwLock<ServerDescription>>,
+        client: &MongoClient,
+        top_arc: &Arc<RwLock<TopologyDescription>>,
         run_monitor: bool
     ) {
 
@@ -758,10 +758,10 @@ impl TopologyDescription {
             return;
         }
 
-        self.add_missing_hosts(description.clone(), client, top_arc, run_monitor);
+        self.add_missing_hosts(&description, &client, &top_arc, run_monitor);
 
         if let Some(ref me) = description.read().unwrap().me {
-            if host != *me {
+            if host != me {
                 self.servers.remove(&host);
                 self.check_if_has_primary();
             }
@@ -769,7 +769,7 @@ impl TopologyDescription {
     }
 
     // Updates a replica set topology with an updated member description.
-    fn update_rs_with_primary_from_member(&mut self, host: Host, description: Arc<RwLock<ServerDescription>>) {
+    fn update_rs_with_primary_from_member(&mut self, host: &Host, description: &Arc<RwLock<ServerDescription>>) {
         if !self.servers.contains_key(&host) {
             return;
         }
@@ -779,7 +779,7 @@ impl TopologyDescription {
         }
 
         if let Some(ref me) = description.read().unwrap().me {
-            if host != *me {
+            if host != me {
                 self.servers.remove(&host);
             }
             return;
@@ -791,9 +791,9 @@ impl TopologyDescription {
     // Begins monitoring hosts that are not currently being monitored.
     fn add_missing_hosts(
         &mut self,
-        description: Arc<RwLock<ServerDescription>>,
-        client: MongoClient,
-        top_arc: Arc<RwLock<TopologyDescription>>,
+        description: &Arc<RwLock<ServerDescription>>,
+        client: &MongoClient,
+        top_arc: &Arc<RwLock<TopologyDescription>>,
         run_monitor: bool
     ) {
         let hosts: Vec<_> = {
@@ -852,7 +852,7 @@ impl Topology {
         let top_description = Arc::new(RwLock::new(options));
 
         Ok(Topology {
-               config: config,
+               config,
                description: top_description,
            })
     }
@@ -860,12 +860,12 @@ impl Topology {
     // Private server stream acquisition helper.
     fn acquire_stream_private(
         &self,
-        read_preference: Option<ReadPreference>,
+        read_preference: &Option<ReadPreference>,
         write: bool
     ) -> Result<(PooledStream, bool, bool)> {
         // Note start of server selection.
         let time = chrono::Local::now();
-        let start_ms = time.timestamp() * 1000 + (time.timestamp_subsec_millis() as i64);
+        let start_ms = time.timestamp() * 1000 + i64::from(time.timestamp_subsec_millis());
 
         loop {
             let result = if write {
@@ -883,7 +883,7 @@ impl Topology {
                 Ok(stream) => return Ok(stream),
                 Err(err) => {
                     let end_time = chrono::Local::now();
-                    let end_ms = end_time.timestamp() * 1000 + (end_time.timestamp_subsec_millis() as i64);
+                    let end_ms = end_time.timestamp() * 1000 + i64::from(end_time.timestamp_subsec_millis());
                     if end_ms - start_ms >= self.description.read()?.server_selection_timeout_ms {
                         return Err(err);
                     }
@@ -896,12 +896,12 @@ impl Topology {
 
     /// Returns a server stream for read operations.
     pub fn acquire_stream(&self, read_preference: ReadPreference) -> Result<(PooledStream, bool, bool)> {
-        self.acquire_stream_private(Some(read_preference), false)
+        self.acquire_stream_private(&Some(read_preference), false)
     }
 
     /// Returns a server stream for write operations.
     pub fn acquire_write_stream(&self) -> Result<PooledStream> {
-        let (stream, _, _) = self.acquire_stream_private(None, true)?;
+        let (stream, _, _) = self.acquire_stream_private(&None, true)?;
         Ok(stream)
     }
 }

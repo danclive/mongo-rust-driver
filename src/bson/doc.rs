@@ -46,7 +46,7 @@ impl error::Error for Error {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 pub struct Document {
     inner: LinkedHashMap<String, Bson>
 }
@@ -58,7 +58,7 @@ impl Document {
         }
     }
 
-    pub fn iter<'a>(&'a self) -> DocumentIterator<'a> {
+    pub fn iter(&self) -> DocumentIterator<'_> {
         self.into_iter()
     }
 

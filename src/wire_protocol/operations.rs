@@ -55,9 +55,9 @@ pub enum Message {
         /// database name and a dot separator.
         namespace: String,
         /// The number of initial documents to skip over in the query results.
-        number_to_skip: i32,
+        // number_to_skip: i32,
         /// The total number of documents that should be returned by the query.
-        number_to_return: i32,
+        // number_to_return: i32,
         /// Specifies which documents to return.
         query: bson::Document,
         /// An optional projection of which fields should be present in the
@@ -77,12 +77,12 @@ impl Message {
         documents: Vec<bson::Document>
     ) -> Message {
         Message::OpReply {
-            header: header,
+            header,
             flags: OpReplyFlags::from_bits_truncate(flags),
-            cursor_id: cursor_id,
-            starting_from: starting_from,
-            number_returned: number_returned,
-            documents: documents,
+            cursor_id,
+            starting_from,
+            number_returned,
+            documents,
         }
     }
 
@@ -91,8 +91,8 @@ impl Message {
         request_id: i32,
         flags: OpQueryFlags,
         namespace: String,
-        number_to_skip: i32,
-        number_to_return: i32,
+        // number_to_skip: i32,
+        // number_to_return: i32,
         query: bson::Document,
         return_field_selector: Option<bson::Document>
     ) -> Result<Message> {
@@ -119,13 +119,13 @@ impl Message {
         let header = Header::new_query(total_length, request_id);
 
         Ok(Message::OpQuery {
-            header: header,
-            flags: flags,
-            namespace: namespace,
-            number_to_skip: number_to_skip,
-            number_to_return: number_to_return,
-            query: query,
-            return_field_selector: return_field_selector,
+            header,
+            flags,
+            namespace,
+            // number_to_skip,
+            // number_to_return,
+            query,
+            return_field_selector,
         })
     }
 
@@ -169,10 +169,10 @@ impl Message {
     fn write_query<W: Write>(
         buffer: &mut W,
         header: &Header,
-        flags: &OpQueryFlags,
+        flags: OpQueryFlags,
         namespace: &str,
-        number_to_skip: i32,
-        number_to_return: i32,
+        //number_to_skip: i32,
+        //number_to_return: i32,
         query: &bson::Document,
         return_field_selector: &Option<bson::Document>
     ) -> Result<()> {
@@ -185,8 +185,8 @@ impl Message {
         // Writes the null terminator for the collection name string.
         buffer.write_u8(0)?;
 
-        buffer.write_i32::<LittleEndian>(number_to_skip)?;
-        buffer.write_i32::<LittleEndian>(number_to_return)?;
+        buffer.write_i32::<LittleEndian>(0)?;
+        buffer.write_i32::<LittleEndian>(-1)?;
         Message::write_bson_document(buffer, query)?;
 
         if let Some(ref doc) = *return_field_selector {
@@ -256,18 +256,18 @@ impl Message {
                 ref header,
                 ref flags,
                 ref namespace,
-                number_to_skip,
-                number_to_return,
+                // number_to_skip,
+                // number_to_return,
                 ref query,
                 ref return_field_selector
             } => {
                 Message::write_query(
                     buffer,
                     header,
-                    flags,
+                    *flags,
                     namespace,
-                    number_to_skip,
-                    number_to_return,
+                    //number_to_skip,
+                    //number_to_return,
                     query,
                     return_field_selector
                 )
@@ -328,9 +328,9 @@ impl Message {
         match header.op_code {
             OpCode::Reply => Message::read_reply(buffer, header),
             opcode => {
-                Err(ResponseError(format!("Expected to read OpCode::Reply but instead found \
-                                           opcode {}",
-                                          opcode)))
+                Err(ResponseError(
+                    format!("Expected to read OpCode::Reply but instead found opcode {}",opcode)
+                ))
             }
         }
     }

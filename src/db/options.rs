@@ -15,7 +15,7 @@ pub struct CreateCollectionOptions {
 
 impl CreateCollectionOptions {
     pub fn new() -> CreateCollectionOptions {
-        Default::default()
+        CreateCollectionOptions::default()
     }
 }
 
@@ -66,7 +66,7 @@ pub struct CreateUserOptions {
 
 impl CreateUserOptions {
     pub fn new() -> CreateUserOptions {
-        Default::default()
+        CreateUserOptions::default()
     }
 }
 
@@ -100,7 +100,7 @@ pub struct UserInfoOptions {
 
 impl UserInfoOptions {
     pub fn new() -> UserInfoOptions {
-        Default::default()
+        UserInfoOptions::default()
     }
 }
 

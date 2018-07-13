@@ -8,19 +8,19 @@ pub trait ToF64 {
 
 impl ToF64 for u8 {
     fn to_f64(&self) -> f64 {
-        *self as f64
+        f64::from(*self)
     }
 }
 
 impl ToF64 for u16 {
     fn to_f64(&self) -> f64 {
-        *self as f64
+        f64::from(*self)
     }
 }
 
 impl ToF64 for u32 {
     fn to_f64(&self) -> f64 {
-        *self as f64
+        f64::from(*self)
     }
 }
 

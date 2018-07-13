@@ -75,7 +75,7 @@ impl MongoClient {
         let config = ConnectionString::new(host, port);
         let mut description = TopologyDescription::new(StreamConnector::Tcp);
         description.topology_type = TopologyType::Single;
-        MongoClient::with_config(config, None, Some(description))
+        MongoClient::with_config(&config, None, Some(description))
     }
 
     pub fn connect_with_options(host: &str, port: u16, options: ClientOptions) -> Result<MongoClient> {
@@ -83,20 +83,20 @@ impl MongoClient {
         let mut description = TopologyDescription::new(options.stream_connector.clone());
 
         description.topology_type = TopologyType::Single;
-        MongoClient::with_config(config, Some(options), Some(description))
+        MongoClient::with_config(&config, Some(options), Some(description))
     }
 
     pub fn with_uri(uri: &str) -> Result<MongoClient> {
         let config = connstring::parse(uri)?;
-        MongoClient::with_config(config, None, None)
+        MongoClient::with_config(&config, None, None)
     }
 
     pub fn with_uri_and_options(uri: &str, options: ClientOptions) -> Result<MongoClient> {
         let config = connstring::parse(uri)?;
-        MongoClient::with_config(config, Some(options), None)
+        MongoClient::with_config(&config, Some(options), None)
     }
 
-    pub fn with_config(config: ConnectionString, options: Option<ClientOptions>, description: Option<TopologyDescription>) -> Result<MongoClient> {
+    pub fn with_config(config: &ConnectionString, options: Option<ClientOptions>, description: Option<TopologyDescription>) -> Result<MongoClient> {
         is_send::<MongoClient>();
         is_sync::<MongoClient>();
 
@@ -120,7 +120,7 @@ impl MongoClient {
             inner: Arc::new(ClientInner {
                 request_id: Arc::new(ATOMIC_ISIZE_INIT),
                 topology: Topology::new(config.clone(), description, client_options.stream_connector.clone())?,
-                listener: listener,
+                listener,
                 read_preference: rp,
                 read_concern: rc,
                 write_concern: wc,
@@ -173,7 +173,7 @@ impl MongoClient {
         doc.insert("listDatabases", Bson::Int32(1));
 
         let db = self.db("admin");
-        let res = db.command(doc, CommandType::ListDatabases, None)?;
+        let res = db.command(doc, &CommandType::ListDatabases, None)?;
         if let Some(&Bson::Array(ref batch)) = res.get("databases") {
             // Extract database names
             let map = batch.iter()
@@ -193,7 +193,7 @@ impl MongoClient {
     }
 }
 
-fn log_command_started(client: MongoClient, command_started: &CommandStarted) {
+fn log_command_started(client: &MongoClient, command_started: &CommandStarted) {
     let mutex = match client.inner.log_file {
         Some(ref mutex) => mutex,
         None => return,
@@ -207,7 +207,7 @@ fn log_command_started(client: MongoClient, command_started: &CommandStarted) {
     let _ = writeln!(guard.deref_mut(), "{}", command_started);
 }
 
-fn log_command_completed(client: MongoClient, command_result: &CommandResult) {
+fn log_command_completed(client: &MongoClient, command_result: &CommandResult) {
     let mutex = match client.inner.log_file {
         Some(ref mutex) => mutex,
         None => return,

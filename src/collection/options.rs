@@ -61,7 +61,7 @@ pub struct AggregateOptions {
 
 impl AggregateOptions {
     pub fn new() -> Self {
-        Default::default()
+        AggregateOptions::default()
     }
 }
 
@@ -168,7 +168,7 @@ pub struct CountOptions {
 
 impl CountOptions {
     pub fn new() -> Self {
-        Default::default()
+        CountOptions::default()
     }
 }
 
@@ -208,7 +208,7 @@ pub struct DistinctOptions {
 
 impl DistinctOptions {
     pub fn new() -> Self {
-        Default::default()
+        DistinctOptions::default()
     }
 }
 
@@ -255,7 +255,7 @@ pub struct FindOptions {
 impl FindOptions {
     /// Creates a new FindOptions struct with default parameters.
     pub fn new() -> Self {
-        Default::default()
+        FindOptions::default()
     }
 }
 
@@ -361,7 +361,7 @@ pub struct FindOneAndDeleteOptions {
 
 impl FindOneAndDeleteOptions {
     pub fn new() -> Self {
-        Default::default()
+        FindOneAndDeleteOptions::default()
     }
 }
 
@@ -405,7 +405,7 @@ pub struct FindOneAndUpdateOptions {
 
 impl FindOneAndUpdateOptions {
     pub fn new() -> Self {
-        Default::default()
+        FindOneAndUpdateOptions::default()
     }
 }
 
@@ -459,7 +459,7 @@ pub struct InsertManyOptions {
 
 impl InsertManyOptions {
     pub fn new() -> Self {
-        Default::default()
+        InsertManyOptions::default()
     }
 }
 
@@ -488,7 +488,7 @@ pub struct InsertOneOptions {
 
 impl InsertOneOptions {
     pub fn new() -> Self {
-        Default::default()
+        InsertOneOptions::default()
     }
 }
 
@@ -518,7 +518,7 @@ pub struct DeleteOptions {
 
 impl DeleteOptions {
     pub fn new() -> DeleteOptions {
-        Default::default()
+        DeleteOptions::default()
     }
 }
 
@@ -547,7 +547,7 @@ pub struct UpdateOptions {
 
 impl UpdateOptions {
     pub fn new() -> UpdateOptions {
-        Default::default()
+        UpdateOptions::default()
     }
 }
 
@@ -591,7 +591,7 @@ pub struct IndexOptions {
 
 impl IndexOptions {
     pub fn new() -> Self {
-        Default::default()
+        IndexOptions::default()
     }
 }
 
@@ -681,7 +681,7 @@ pub struct IndexModel {
 impl IndexModel {
     pub fn new(keys: Document, options: Option<IndexOptions>) -> IndexModel {
         IndexModel {
-            keys: keys,
+            keys,
             options: options.unwrap_or_default()
         }
     }

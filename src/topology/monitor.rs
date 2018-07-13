@@ -20,7 +20,7 @@ use super::server::{ServerDescription, ServerType};
 use super::{DEFAULT_HEARTBEAT_FREQUENCY_MS, TopologyDescription};
 
 const DEFAULT_MAX_BSON_OBJECT_SIZE: i64 = 16 * 1024 * 1024;
-const DEFAULT_MAX_MESSAGE_SIZE_BYTES: i64 = 48000000;
+const DEFAULT_MAX_MESSAGE_SIZE_BYTES: i64 = 48_000_000;
 
 /// The result of an isMaster operation.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -81,7 +81,7 @@ pub struct Monitor {
 
 impl IsMasterResult {
     /// Parses an isMaster response document from the server.
-    pub fn new(doc: Document) -> Result<IsMasterResult> {
+    pub fn new(doc: &Document) -> Result<IsMasterResult> {
         let ok = match doc.get("ok") {
             Some(&Bson::Int32(v)) => v != 0,
             Some(&Bson::Int64(v)) => v != 0,
@@ -90,7 +90,7 @@ impl IsMasterResult {
         };
 
         let mut result = IsMasterResult {
-            ok: ok,
+            ok,
             is_master: false,
             max_bson_object_size: DEFAULT_MAX_BSON_OBJECT_SIZE,
             max_message_size_bytes: DEFAULT_MAX_MESSAGE_SIZE_BYTES,
@@ -225,12 +225,12 @@ impl Monitor {
         connector: StreamConnector
     ) -> Monitor {
         Monitor {
-            client: client,
+            client,
             host: host.clone(),
             server_pool: pool,
             personal_pool: Arc::new(ConnectionPool::with_size(host, connector, 1)),
-            top_description: top_description,
-            server_description: server_description,
+            top_description,
+            server_description,
             heartbeat_frequency_ms: AtomicUsize::new(DEFAULT_HEARTBEAT_FREQUENCY_MS as usize),
             dummy_lock: Mutex::new(()),
             condvar: Condvar::new(),
@@ -245,7 +245,7 @@ impl Monitor {
             server_description.set_err(err);
         }
 
-        self.update_top_description(self.server_description.clone());
+        self.update_top_description(&self.server_description);
     }
 
     /// Returns an isMaster server response using an string monitor socket.
@@ -253,19 +253,19 @@ impl Monitor {
         let stream = self.personal_pool.acquire_stream()?;
 
         let time = chrono::Local::now();
-        let start_ms = time.timestamp() * 1000 + (time.timestamp_subsec_millis() as i64);
+        let start_ms = time.timestamp() * 1000 + i64::from(time.timestamp_subsec_millis());
 
         let doc = Database::command_with_stream(
-            self.client.clone(),
+            &self.client,
             stream,
             "local".to_owned(),
             doc!{"isMaster": 1},
-            CommandType::IsMaster,
+            &CommandType::IsMaster,
             false
         )?;
 
         let end_time = chrono::Local::now();
-        let end_ms = end_time.timestamp() * 1000 + (end_time.timestamp_subsec_millis() as i64);
+        let end_ms = end_time.timestamp() * 1000 + i64::from(end_time.timestamp_subsec_millis());
 
         let round_trip_time = end_ms - start_ms;
         Ok((doc, round_trip_time))
@@ -279,11 +279,11 @@ impl Monitor {
     // response.
     fn update_server_description(
         &self,
-        doc: Document,
+        doc: &Document,
         round_trip_time: i64
     ) -> Result<Arc<RwLock<ServerDescription>>> {
 
-        let ismaster_result = IsMasterResult::new(doc);
+        let ismaster_result = IsMasterResult::new(&doc);
         {
             let mut server_description = self.server_description.write().unwrap();
             match ismaster_result {
@@ -299,27 +299,27 @@ impl Monitor {
     }
 
     // Updates the topology description associated with this monitor using a new server description.
-    fn update_top_description(&self, description: Arc<RwLock<ServerDescription>>) {
+    fn update_top_description(&self, description: &Arc<RwLock<ServerDescription>>) {
         let mut top_description = self.top_description.write().unwrap();
         top_description.update(
-            self.host.clone(),
-            description,
-            self.client.clone(),
-            self.top_description.clone()
+            &self.host,
+            &description,
+            &self.client,
+            &self.top_description
         );
     }
 
     // Updates server and topology descriptions using a successful isMaster cursor result.
-    fn update_with_is_master_cursor(&self, doc: Document, round_trip_time: i64) {
-        if let Ok(description) = self.update_server_description(doc, round_trip_time) {
-            self.update_top_description(description);
+    fn update_with_is_master_cursor(&self, doc: &Document, round_trip_time: i64) {
+        if let Ok(description) = self.update_server_description(&doc, round_trip_time) {
+            self.update_top_description(&description);
         }
     }
 
     /// Execute isMaster and update the server and topology.
     fn execute_update(&self) {
         match self.is_master() {
-            Ok((doc, rtt)) => self.update_with_is_master_cursor(doc, rtt),
+            Ok((doc, rtt)) => self.update_with_is_master_cursor(&doc, rtt),
             Err(err) => {
                 // Refresh all connections
                 self.server_pool.clear();
@@ -331,7 +331,7 @@ impl Monitor {
 
                 // Retry once
                 match self.is_master() {
-                    Ok((mut doc, rtt)) => self.update_with_is_master_cursor(doc, rtt),
+                    Ok((mut doc, rtt)) => self.update_with_is_master_cursor(&doc, rtt),
                     Err(err) => self.set_err(err)
                 }
             }

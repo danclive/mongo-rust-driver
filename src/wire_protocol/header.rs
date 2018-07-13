@@ -60,10 +60,10 @@ impl Header {
     /// Constructs a new Header.
     pub fn new(message_length: i32, request_id: i32, response_to: i32, op_code: OpCode) -> Header {
         Header {
-            message_length: message_length,
-            request_id: request_id,
-            response_to: response_to,
-            op_code: op_code
+            message_length,
+            request_id,
+            response_to,
+            op_code
         }
     }
 

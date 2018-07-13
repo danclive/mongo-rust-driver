@@ -9,10 +9,10 @@ pub trait EventRunner {
 
 impl EventRunner for MongoClient {
     fn run_start_hooks(&self, hook: &CommandStarted) -> Result<()> {
-        self.inner.listener.run_start_hooks(self.clone(), hook)
+        self.inner.listener.run_start_hooks(&self, hook)
     }
 
     fn run_completion_hooks(&self, hook: &CommandResult) -> Result<()> {
-        self.inner.listener.run_completion_hooks(self.clone(), hook)
+        self.inner.listener.run_completion_hooks(&self, hook)
     }
 }

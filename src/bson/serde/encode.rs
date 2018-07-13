@@ -60,6 +60,7 @@ impl Serialize for Bson {
 }
 
 /// Serde Encoder
+#[derive(Default)]
 pub struct Encoder;
 
 impl Encoder {
@@ -88,7 +89,7 @@ impl Serializer for Encoder {
 
     #[inline]
     fn serialize_i8(self, value: i8) -> EncodeResult<Bson> {
-        self.serialize_i32(value as i32)
+        self.serialize_i32(i32::from(value))
     }
 
     #[inline]
@@ -98,7 +99,7 @@ impl Serializer for Encoder {
 
     #[inline]
     fn serialize_i16(self, value: i16) -> EncodeResult<Bson> {
-        self.serialize_i32(value as i32)
+        self.serialize_i32(i32::from(value))
     }
 
     #[inline]
@@ -128,7 +129,7 @@ impl Serializer for Encoder {
 
     #[inline]
     fn serialize_f32(self, value: f32) -> EncodeResult<Bson> {
-        self.serialize_f64(value as f64)
+        self.serialize_f64(f64::from(value))
     }
 
     #[inline]

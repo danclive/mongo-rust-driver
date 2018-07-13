@@ -37,7 +37,7 @@ impl Collection {
     ///
     /// If `create` is specified, the collection will be explicitly created in the database.
     pub fn new(
-        db: Database,
+        db: &Database,
         name: &str,
         create: bool,
         read_preference: Option<ReadPreference>,
@@ -180,9 +180,9 @@ impl Collection {
 
         count_command.insert("readConcern", read_concern.to_document());
 
-        let result = self.db.command(count_command, CommandType::Count, Some(read_preference))?;
+        let result = self.db.command(count_command, &CommandType::Count, Some(read_preference))?;
         match result.get("n") {
-            Some(&Bson::Int32(n)) => Ok(n as i64),
+            Some(&Bson::Int32(n)) => Ok(i64::from(n)),
             Some(&Bson::Int64(n)) => Ok(n),
             _ => Err(ResponseError("No count received from server.".to_string())),
         }
@@ -219,7 +219,7 @@ impl Collection {
 
         distinct_command.insert("readConcern", read_concern.to_document());
 
-        let result = self.db.command(distinct_command, CommandType::Distinct, Some(read_preference))?;
+        let result = self.db.command(distinct_command, &CommandType::Distinct, Some(read_preference))?;
 
         match result.get("values") {
             Some(&Bson::Array(ref vals)) => Ok(vals.to_vec()),
@@ -313,7 +313,7 @@ impl Collection {
 
         find_and_modify_command.insert("writeConcern", write_concern.to_document());
 
-        let mut result = self.db.command(find_and_modify_command, CommandType::FindAndModify, None)?;
+        let mut result = self.db.command(find_and_modify_command, &CommandType::FindAndModify, None)?;
 
         WriteException::validate_write_result(&result, write_concern)?;
 
@@ -353,7 +353,7 @@ impl Collection {
 
         find_and_modify_command.insert("writeConcern", write_concern.to_document());
 
-        let mut result = self.db.command(find_and_modify_command, CommandType::FindAndModify, None)?;
+        let mut result = self.db.command(find_and_modify_command, &CommandType::FindAndModify, None)?;
 
         WriteException::validate_write_result(&result, write_concern)?;
 
@@ -393,7 +393,7 @@ impl Collection {
 
         find_and_modify_command.insert("writeConcern", write_concern.to_document());
 
-        let mut result = self.db.command(find_and_modify_command, CommandType::FindAndModify, None)?;
+        let mut result = self.db.command(find_and_modify_command, &CommandType::FindAndModify, None)?;
 
         WriteException::validate_write_result(&result, write_concern)?;
 
@@ -408,14 +408,14 @@ impl Collection {
     // Internal insertion helper function. Returns a vec of collected ids and a possible exception.
     fn insert(
         &self,
-        docs: Vec<Document>,
+        docs: &[Document],
         options: Option<InsertManyOptions>
     ) -> Result<(Vec<Bson>, Option<BulkWriteException>)> {
 
         let mut converted_docs = Vec::new();
         let mut ids = Vec::new();
 
-        for doc in &docs {
+        for doc in docs {
             let mut cdoc = doc.clone();
             match doc.get("_id") {
                 Some(id) => ids.push(id.clone()),
@@ -445,7 +445,7 @@ impl Collection {
 
         insert_command.insert("writeConcern", write_concern.to_document());
 
-        let result = self.db.command(insert_command, CommandType::Insert, None)?;
+        let result = self.db.command(insert_command, &CommandType::Insert, None)?;
 
         // Intercept bulk write exceptions and insert into the result
         let exception = match BulkWriteException::validate_bulk_write_result(&result, write_concern) {
@@ -471,7 +471,7 @@ impl Collection {
             insert_many_options.write_concern = insert_one_options.write_concern;
         }
 
-        let (ids, bulk_exception) = self.insert(vec![doc], Some(insert_many_options))?;
+        let (ids, bulk_exception) = self.insert(&[doc], Some(insert_many_options))?;
 
         if ids.is_empty() {
             return Err(OperationError("No ids returned for insert_one.".to_string()));
@@ -500,11 +500,11 @@ impl Collection {
     /// the driver should generate them.
     pub fn insert_many(
         &self,
-        docs: Vec<Document>,
+        docs: &[Document],
         options: Option<InsertManyOptions>
     ) -> Result<InsertManyResult> {
 
-        let (ids, exception) = self.insert(docs, options)?;
+        let (ids, exception) = self.insert(&docs, options)?;
 
         let mut map = BTreeMap::new();
         for (i, item) in ids.iter().enumerate() {
@@ -513,7 +513,7 @@ impl Collection {
 
         if let Some(ref exc) = exception {
             for error in &exc.write_errors {
-                map.remove(&(error.index as i64));
+                map.remove(&i64::from(error.index));
             }
         }
 
@@ -539,7 +539,7 @@ impl Collection {
             }
 
             if let Some(ref collation) = delete_options.collation {
-                for delete in deletes.iter_mut() {
+                for delete in &mut deletes {
                     delete.insert("collation", collation.clone());
                 }
             }
@@ -550,7 +550,7 @@ impl Collection {
         delete_command.insert("writeConcern", write_concern.to_document());
         delete_command.insert("deletes", deletes);
 
-        let result = self.db.command(delete_command, CommandType::Delete, None)?;
+        let result = self.db.command(delete_command, &CommandType::Delete, None)?;
 
         // Intercept write exceptions and insert into the result
         let exception = match BulkWriteException::validate_bulk_write_result(&result, write_concern) {
@@ -559,7 +559,7 @@ impl Collection {
             Err(e) => return Err(e),
         };
 
-        Ok(BulkDeleteResult::new(result, exception))
+        Ok(BulkDeleteResult::new(&result, exception))
     }
 
     pub fn delete_one(
@@ -609,7 +609,7 @@ impl Collection {
                 write_concern = write_concern_option.clone();
             }
 
-            for update in updates.iter_mut() {
+            for update in &mut updates {
                 if let Some(upsert) = update_options.upsert {
                     update.insert("upsert", upsert);
                 }
@@ -629,7 +629,7 @@ impl Collection {
         update_command.insert("writeConcern", write_concern.to_document());
         update_command.insert("updates", updates);
 
-        let result = self.db.command(update_command, CommandType::Update, None)?;
+        let result = self.db.command(update_command, &CommandType::Update, None)?;
 
         // Intercept write exceptions and insert into the result
         let exception = match BulkWriteException::validate_bulk_write_result(&result, write_concern) {
@@ -638,7 +638,7 @@ impl Collection {
             Err(e) => return Err(e),
         };
 
-        Ok(BulkUpdateResult::new(result, exception))
+        Ok(BulkUpdateResult::new(&result, exception))
     }
 
     pub fn update_one(
@@ -770,7 +770,7 @@ impl Collection {
             indexes.push(model.to_document()?);
         }
 
-        let write_concern = write_concern.unwrap_or(self.write_concern.clone());
+        let write_concern = write_concern.unwrap_or_else(|| self.write_concern.clone());
 
         let create_indexes_command = doc!{
             "createIndexes": self.name(),
@@ -778,7 +778,7 @@ impl Collection {
             "writeConcern": write_concern.to_document()
         };
 
-        let result = self.db.command(create_indexes_command, CommandType::CreateIndexes, None)?;
+        let result = self.db.command(create_indexes_command, &CommandType::CreateIndexes, None)?;
 
         match result.get("errmsg") {
             Some(&Bson::String(ref msg)) => Err(OperationError(msg.to_string())),
@@ -789,29 +789,29 @@ impl Collection {
     /// Drop an index.
     pub fn drop_index(&self, keys: Document, options: Option<IndexOptions>) -> Result<()> {
         let model = IndexModel::new(keys, options);
-        self.drop_index_model(model)
+        self.drop_index_model(&model)
     }
 
     /// Drop an index by name.
-    pub fn drop_index_string(&self, name: String) -> Result<()> {
+    pub fn drop_index_string(&self, name: &str) -> Result<()> {
         let mut options = IndexOptions::new();
         options.name = Some(name.to_string());
 
         let model = IndexModel::new(Document::new(), Some(options));
-        self.drop_index_model(model)
+        self.drop_index_model(&model)
     }
 
     /// Drop an index by IndexModel.
     pub fn drop_index_model(
         &self,
-        model: IndexModel
+        model: &IndexModel
     ) -> Result<()> {
         let drop_index_command = doc!{
             "dropIndexes": self.name(),
             "index": model.name()?
         };
 
-        let result = self.db.command(drop_index_command, CommandType::DropIndexes, None)?;
+        let result = self.db.command(drop_index_command, &CommandType::DropIndexes, None)?;
         match result.get("errmsg") {
             Some(&Bson::String(ref msg)) => Err(OperationError(msg.to_string())),
             _ => Ok(()),
@@ -824,6 +824,6 @@ impl Collection {
         options.name = Some("*".to_owned());
 
         let model = IndexModel::new(doc!{}, Some(options));
-        self.drop_index_model(model)
+        self.drop_index_model(&model)
     }
 }

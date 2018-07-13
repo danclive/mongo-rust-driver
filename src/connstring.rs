@@ -4,7 +4,7 @@ use error::Error::ArgumentError;
 use std::collections::BTreeMap;
 
 pub const DEFAULT_PORT: u16 = 27017;
-pub const URI_SCHEME: &'static str = "mongodb://";
+pub const URI_SCHEME: &str = "mongodb://";
 
 /// Encapsulates the hostname and port of a host.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -21,8 +21,8 @@ impl Host {
     // Creates a new Host struct.
     fn new(host_name: String, port: u16) -> Host {
         Host {
-            host_name: host_name,
-            port: port,
+            host_name,
+            port,
             ipc: String::new(),
         }
     }
@@ -31,7 +31,7 @@ impl Host {
         Host {
             host_name: String::new(),
             port: DEFAULT_PORT,
-            ipc: ipc,
+            ipc,
         }
     }
 
@@ -51,8 +51,8 @@ impl ConnectionOptions {
     /// Creates a new ConnectionOptions struct.
     pub fn new(options: BTreeMap<String, String>, read_pref_tags: Vec<String>) -> ConnectionOptions {
         ConnectionOptions {
-            options: options,
-            read_pref_tags: read_pref_tags,
+            options,
+            read_pref_tags,
         }
     }
 
@@ -98,8 +98,7 @@ impl ConnectionString {
 /// [the manual](http://docs.mongodb.org/manual/reference/connection-string/).
 pub fn parse(address: &str) -> Result<ConnectionString> {
     if !address.starts_with(URI_SCHEME) {
-        return Err(ArgumentError("MongoDB connection string must start with \
-                                               'mongodb://'.".to_string()));
+        return Err(ArgumentError("MongoDB connection string must start with 'mongodb://'.".to_string()));
     }
 
     // Remove scheme
@@ -127,8 +126,7 @@ pub fn parse(address: &str) -> Result<ConnectionString> {
     };
 
     if path_str.is_empty() && host_str.contains('?') {
-        return Err(ArgumentError("A '/' is required between the host list and any \
-                                               options.".to_string()));
+        return Err(ArgumentError("A '/' is required between the host list and any options.".to_string()));
     }
 
     // Split on authentication and hosts
@@ -159,17 +157,17 @@ pub fn parse(address: &str) -> Result<ConnectionString> {
 
     // Collect options if any exist
     if !opts.is_empty() {
-        options = Some(split_options(opts).unwrap());
+        options = Some(split_options(opts)?);
     }
 
     Ok(ConnectionString {
-        hosts: hosts,
+        hosts,
         string: Some(address.to_string()),
-        user: user,
-        password: password,
-        database: database,
-        collection: collection,
-        options: options,
+        user,
+        password,
+        database,
+        collection,
+        options,
     })
 }
 
@@ -177,8 +175,8 @@ pub fn parse(address: &str) -> Result<ConnectionString> {
 fn parse_user_info(user_info: &str) -> Result<(&str, &str)> {
     let (user, password) = rpartition(user_info, ":");
     if user_info.contains('@') || user.contains(':') {
-        return Err(ArgumentError("':' or '@' characters in a username or password \
-                                               must be escaped according to RFC 2396.".to_string()));
+        return Err(ArgumentError(
+            "':' or '@' characters in a username or password must be escaped according to RFC 2396.".to_string()));
     }
     if user.is_empty() {
         return Err(ArgumentError("The empty string is not a valid username.".to_string()));

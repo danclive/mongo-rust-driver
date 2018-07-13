@@ -52,12 +52,12 @@ macro_rules! try_or_emit {
         match $result {
             Ok(val) => val,
             Err(e) => {
-                if $cmd_type != CommandType::Suppressed {
+                if $cmd_type != &CommandType::Suppressed {
                     let hook_result = $client.run_completion_hooks(&CommandResult::Failure {
                         duration: 0,
                         command_name: $cmd_name.to_string(),
                         failure: &e,
-                        request_id: $req_id as i64,
+                        request_id: i64::from($req_id),
                         connection_string: $connstring,
                     });
 
@@ -90,7 +90,7 @@ impl Database {
         Database {
             inner: Arc::new(DatabaseInner {
                 name: name.to_string(),
-                client: client,
+                client,
                 read_preference: rp,
                 read_concern: rc,
                 write_concern: wc,
@@ -105,7 +105,7 @@ impl Database {
 
     pub fn collection(&self, coll_name: &str) -> Collection {
         Collection::new(
-            self.clone(),
+            &self,
             coll_name,
             false,
             Some(self.inner.read_preference.clone()),
@@ -123,7 +123,7 @@ impl Database {
         write_concern: Option<WriteConcern>
     ) -> Collection {
         Collection::new(
-            self.clone(),
+            &self,
             coll_name,
             create,
             read_preference,
@@ -139,7 +139,7 @@ impl Database {
     pub fn command(
         &self,
         command: Document,
-        command_type: CommandType,
+        command_type: &CommandType,
         read_preference: Option<ReadPreference>
     ) -> Result<Document> {
 
@@ -166,20 +166,21 @@ impl Database {
         };
 
         Database::command_with_stream(
-            self.inner.client.clone(), 
+            &self.inner.client, 
             stream,
             self.inner.name.clone(),
             new_command,
-            command_type, slave_ok
+            &command_type,
+            slave_ok
         )
     }
 
     pub fn command_with_stream(
-        client: MongoClient,
+        client: &MongoClient,
         stream: PooledStream,
         name: String,
         command: Document,
-        command_type: CommandType,
+        command_type: &CommandType,
         slave_ok: bool
     ) -> Result<Document> {
 
@@ -203,18 +204,18 @@ impl Database {
             request_id,
             new_flags,
             name.clone() + ".$cmd",
-            0,
-            -1,
+            // 0,
+            // -1,
             command.clone(),
             None
         )?;
 
-        if command_type != CommandType::Suppressed {
+        if command_type != &CommandType::Suppressed {
             let hook_result = client.run_start_hooks(&CommandStarted {
-                command: command,
+                command,
                 database_name: name,
                 command_name: command_name.to_string(),
-                request_id: request_id as i64,
+                request_id: i64::from(request_id),
                 connection_string: connstring.clone(),
             });
 
@@ -252,12 +253,12 @@ impl Database {
             client
         );
         
-        if command_type != CommandType::Suppressed {
+        if command_type != &CommandType::Suppressed {
             let _hook_result = client.run_completion_hooks(&CommandResult::Success {
-                duration: (fin_time - init_time).subsec_nanos() as u64,
+                duration: u64::from((fin_time - init_time).subsec_nanos()),
                 reply: doc.clone(),
                 command_name: command_name.to_string(),
-                request_id: request_id as i64,
+                request_id: i64::from(request_id),
                 connection_string: connstring,
             });
         }
@@ -287,9 +288,9 @@ impl Database {
                     return Ok(doc)
                 }
 
-                return Ok(Document::new())
+                Ok(Document::new())
             }
-            _ => return Err(CursorNotFoundError)
+            _ => Err(CursorNotFoundError)
         }
     }
 
@@ -311,7 +312,7 @@ impl Database {
             list_collections_command.insert("filter", Bson::Document(filter.unwrap()));
         }
 
-        return Cursor::command(self.clone(), list_collections_command, CommandType::ListCollections, Some(batch_size), None, None)
+        Cursor::command(self.clone(), list_collections_command, CommandType::ListCollections, Some(batch_size), None, None)
     }
 
     pub fn collection_names(&self, filter: Option<bson::Document>) -> Result<Vec<String>> {
@@ -332,7 +333,7 @@ impl Database {
 
     pub fn version(&self) -> Result<Version> {
         let doc = doc!{ "buildinfo": 1 };
-        let out = self.command(doc, CommandType::BuildInfo, None)?;
+        let out = self.command(doc, &CommandType::BuildInfo, None)?;
 
         match out.get("version") {
             Some(&Bson::String(ref s)) => {
@@ -356,7 +357,7 @@ impl Database {
             doc.extend(create_collection_options);
         }
 
-        self.command(doc, CommandType::CreateCollection, None).map(|_| ())
+        self.command(doc, &CommandType::CreateCollection, None).map(|_| ())
     }
 
     pub fn create_user(
@@ -379,7 +380,7 @@ impl Database {
             }
         };
 
-        self.command(doc, CommandType::CreateUser, None).map(|_| ())
+        self.command(doc, &CommandType::CreateUser, None).map(|_| ())
     }
 
     pub fn drop_all_users(&self, write_concern: Option<WriteConcern>) -> Result<(i32)> {
@@ -389,7 +390,7 @@ impl Database {
             doc.insert("writeConcern", concern.to_document());
         }
 
-        let response = self.command(doc, CommandType::DropAllUsers, None)?;
+        let response = self.command(doc, &CommandType::DropAllUsers, None)?;
 
         match response.get("n") {
             Some(&Bson::Int32(i)) => Ok(i),
@@ -401,14 +402,14 @@ impl Database {
     pub fn drop_collection(&self, name: &str) -> Result<()> {
         let mut spec = bson::Document::new();
         spec.insert("drop", Bson::String(name.to_string()));
-        self.command(spec, CommandType::DropCollection, None)?;
+        self.command(spec, &CommandType::DropCollection, None)?;
         Ok(())
     }
 
     pub fn drop_database(&self) -> Result<()> {
         let mut spec = bson::Document::new();
         spec.insert("dropDatabase", Bson::Int32(1));
-        self.command(spec, CommandType::DropDatabase, None)?;
+        self.command(spec, &CommandType::DropDatabase, None)?;
         Ok(())
     }
 
@@ -419,7 +420,7 @@ impl Database {
             doc.insert("writeConcern", concern.to_document());
         }
 
-        self.command(doc, CommandType::DropUser, None).map(|_| ())
+        self.command(doc, &CommandType::DropUser, None).map(|_| ())
     }
 
     pub fn get_all_users(&self, show_credentials: bool) -> Result<Vec<bson::Document>> {
@@ -428,7 +429,7 @@ impl Database {
             "showCredentials": show_credentials
         };
 
-        let out = self.command(doc, CommandType::GetUsers, None)?;
+        let out = self.command(doc, &CommandType::GetUsers, None)?;
         let vec = match out.get("users") {
             Some(&Bson::Array(ref vec)) => vec.clone(),
             _ => return Err(CursorNotFoundError),
@@ -450,7 +451,7 @@ impl Database {
         let mut doc = doc!{
             "usersInfo": {
                 "user": user,
-                "db": (self.inner.name.to_string())
+                "db": self.inner.name.to_string()
             }
         };
 
@@ -458,7 +459,7 @@ impl Database {
             doc.extend(user_info_options);
         }
 
-        let out = match self.command(doc, CommandType::GetUser, None) {
+        let out = match self.command(doc, &CommandType::GetUser, None) {
             Ok(doc) => doc,
             Err(e) => return Err(e),
         };
@@ -495,7 +496,7 @@ impl Database {
             doc.extend(user_info_options);
         }
 
-        let out = self.command(doc, CommandType::GetUsers, None)?;
+        let out = self.command(doc, &CommandType::GetUsers, None)?;
         let vec = match out.get("users") {
             Some(&Bson::Array(ref vec)) => vec.clone(),
             _ => return Err(CursorNotFoundError),

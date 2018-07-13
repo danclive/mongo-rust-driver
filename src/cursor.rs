@@ -44,7 +44,7 @@ impl Cursor {
         //let limit = limit.unwrap_or_default();
         let max_time_ms = max_time_ms.unwrap_or_default();
 
-        let doc = db.command(command, command_type.clone(), read_preference.clone())?;
+        let doc = db.command(command, &command_type, read_preference.clone())?;
 
         if let Some(&Bson::Int64(ref id)) = doc.get("id") {
             if let Some(&Bson::String(ref ns)) = doc.get("ns") {
@@ -59,15 +59,15 @@ impl Cursor {
                     }).collect();
 
                     return Ok(Cursor {
-                        db: db,
+                        db,
                         namespace: ns.to_owned(),
-                        batch_size: batch_size,
+                        batch_size,
                         cursor_id: *id,
-                        max_time_ms: max_time_ms,
+                        max_time_ms,
                         count: 0,
                         buffer: map,
-                        read_preference: read_preference,
-                        command_type: command_type
+                        read_preference,
+                        command_type
                     })
                 }
             }
@@ -106,14 +106,14 @@ impl Cursor {
                 "maxTimeMS": self.max_time_ms
             };
 
-            let doc = self.db.command(get_more_command, CommandType::GetMore, self.read_preference.clone())?;
+            let doc = self.db.command(get_more_command, &CommandType::GetMore, self.read_preference.clone())?;
 
             if let Some(&Bson::Int64(ref id)) = doc.get("id") {
                 self.cursor_id = *id;
 
                 if let Some(&Bson::Array(ref batch)) = doc.get("nextBatch") {
                     for doc in batch {
-                        if let &Bson::Document(ref doc) = doc {
+                        if let Bson::Document(ref doc) = *doc {
                             self.buffer.push_back(doc.clone());
                         }
                     }
@@ -209,7 +209,7 @@ impl Drop for Cursor {
                     "killCursors": self.name().clone(),
                     "cursors": [self.cursor_id]
                 },
-                CommandType::Find,
+                &CommandType::Find,
                 self.read_preference.clone()
             );
         }

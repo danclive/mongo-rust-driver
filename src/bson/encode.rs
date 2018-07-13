@@ -122,7 +122,7 @@ pub fn encode_object<'a, S, W, D> (writer: &mut W, doc: D) -> EncodeResult<()>
     where S: AsRef<str> + 'a, W: Write + ?Sized, D: IntoIterator<Item = (&'a S, &'a Bson)>
 {
     let mut buf = Vec::new();
-    for (key, val) in doc.into_iter() {
+    for (key, val) in doc {
         encode_bson(&mut buf, key.as_ref(), val)?;
     }
 
@@ -173,7 +173,7 @@ fn encode_bson<W>(writer: &mut W, key: &str, val: &Bson) -> EncodeResult<()>
         Bson::UTCDatetime(ref v) => {
             write_i64(
                 writer,
-                (v.timestamp() * 1000) + (v.nanosecond() / 1000000) as i64
+                v.timestamp() * 1000 + i64::from(v.nanosecond() / 1_000_000)
             )
         }
         Bson::Null => Ok(()),

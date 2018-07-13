@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "cargo-clippy", allow(map_entry))]
+
 extern crate linked_hash_map;
 extern crate chrono;
 extern crate serde;

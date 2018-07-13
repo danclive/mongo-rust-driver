@@ -73,13 +73,13 @@ impl fmt::Display for WriteException {
         let wc_err = &self.write_concern_error;
         let w_err = &self.write_error;
 
-        write!(fmt, "WriteException:\n")?;
+        writeln!(fmt, "WriteException:")?;
         if wc_err.is_some() {
-            write!(fmt, "{:?}\n", wc_err)?;
+            writeln!(fmt, "{:?}", wc_err)?;
         }
 
         if w_err.is_some() {
-            write!(fmt, "{:?}\n", w_err)?;
+            writeln!(fmt, "{:?}", w_err)?;
         }
 
         Ok(())
@@ -88,24 +88,24 @@ impl fmt::Display for WriteException {
 
 impl fmt::Display for BulkWriteException {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "BulkWriteException:\n")?;
+        writeln!(fmt, "BulkWriteException:")?;
 
-        write!(fmt, "Processed Requests:\n")?;
+        writeln!(fmt, "Processed Requests:")?;
         for v in &self.processed_requests {
-            write!(fmt, "{:?}\n", v)?;
+            writeln!(fmt, "{:?}", v)?;
         }
 
-        write!(fmt, "Unprocessed Requests:\n")?;
+        writeln!(fmt, "Unprocessed Requests:")?;
         for v in &self.unprocessed_requests {
-            write!(fmt, "{:?}\n", v)?;
+            writeln!(fmt, "{:?}", v)?;
         }
 
         if let Some(ref error) = self.write_concern_error {
-            write!(fmt, "{:?}\n", error)?;
+            writeln!(fmt, "{:?}", error)?;
         }
 
         for v in &self.write_errors {
-            write!(fmt, "{:?}\n", v)?;
+            writeln!(fmt, "{:?}", v)?;
         }
 
         Ok(())
@@ -114,9 +114,9 @@ impl fmt::Display for BulkWriteException {
 
 impl fmt::Display for BulkWriteError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(
+        writeln!(
             fmt,
-            "BulkWriteError at index {} (code {}): {}\n",
+            "BulkWriteError at index {} (code {}): {}",
             self.index,
             self.code,
             self.message
@@ -124,7 +124,7 @@ impl fmt::Display for BulkWriteError {
 
         match self.request {
             Some(ref request) => write!(fmt, "Failed to execute request {:?}\n.", request)?,
-            None => write!(fmt, "No additional error information was received.\n")?,
+            None => writeln!(fmt, "No additional error information was received.")?,
         }
 
         Ok(())
@@ -155,7 +155,7 @@ impl WriteException {
     pub fn with_bulk_exception(bulk_exception: BulkWriteException) -> WriteException {
         let len = bulk_exception.write_errors.len();
         let write_error = match bulk_exception.write_errors.get(len - 1) {
-            Some(e) => Some(WriteError::new(e.code, e.message.to_string())),
+            Some(e) => Some(WriteError::new(e.code, &e.message)),
             None => None,
         };
 
@@ -180,16 +180,16 @@ impl WriteException {
 
 impl WriteConcernError {
     /// Returns a new WriteConcernError containing the provided error information.
-    pub fn new<T: ToString>(code: i32, details: WriteConcern, message: T) -> WriteConcernError {
+    pub fn new<T: ToString>(code: i32, details: WriteConcern, message: &T) -> WriteConcernError {
         WriteConcernError {
-            code: code,
-            details: details,
+            code,
+            details,
             message: message.to_string(),
         }
     }
 
     /// Parses a Bson document into a WriteConcernError with the provided write concern.
-    pub fn parse(error: Document, write_concern: WriteConcern) -> Result<WriteConcernError> {
+    pub fn parse(error: &Document, write_concern: WriteConcern) -> Result<WriteConcernError> {
         if let Some(&Bson::Int32(ref code)) = error.get("code") {
             if let Some(&Bson::String(ref message)) = error.get("errmsg") {
                 return Ok(WriteConcernError::new(*code, write_concern, message));
@@ -201,15 +201,15 @@ impl WriteConcernError {
 
 impl WriteError {
     /// Returns a new WriteError containing the provided error information.
-    pub fn new<T: ToString>(code: i32, message: T) -> WriteError {
+    pub fn new<T: ToString>(code: i32, message: &T) -> WriteError {
         WriteError {
-            code: code,
+            code,
             message: message.to_string(),
         }
     }
 
     /// Parses a Bson document into a WriteError.
-    pub fn parse(error: Document) -> Result<WriteError> {
+    pub fn parse(error: &Document) -> Result<WriteError> {
         if let Some(&Bson::Int32(ref code)) = error.get("code") {
             if let Some(&Bson::String(ref message)) = error.get("errmsg") {
                 return Ok(WriteError::new(*code, message));
@@ -224,19 +224,19 @@ impl BulkWriteError {
     pub fn new<T: ToString>(
         index: i32,
         code: i32,
-        message: T,
+        message: &T,
         request: Option<WriteModel>
     ) -> BulkWriteError {
         BulkWriteError {
-            index: index,
-            code: code,
+            index,
+            code,
             message: message.to_string(),
-            request: request,
+            request,
         }
     }
 
     /// Parses a Bson document into a BulkWriteError.
-    pub fn parse(error: Document) -> Result<BulkWriteError> {
+    pub fn parse(error: &Document) -> Result<BulkWriteError> {
         if let Some(&Bson::Int32(ref index)) = error.get("index") {
             if let Some(&Bson::Int32(ref code)) = error.get("code") {
                 if let Some(&Bson::String(ref message)) = error.get("errmsg") {
@@ -269,8 +269,8 @@ impl BulkWriteException {
         BulkWriteException {
             processed_requests: processed,
             unprocessed_requests: unprocessed,
-            write_concern_error: write_concern_error,
-            write_errors: write_errors,
+            write_concern_error,
+            write_errors,
             message: s.to_string(),
         }
     }
@@ -328,7 +328,7 @@ impl BulkWriteException {
 
         // Parse out any write concern errors.
         let wc_err = if let Some(&Bson::Document(ref error)) = result.get("writeConcernError") {
-            Some(WriteConcernError::parse(error.clone(), write_concern)?)
+            Some(WriteConcernError::parse(&error, write_concern)?)
         } else {
             None
         };
@@ -343,7 +343,7 @@ impl BulkWriteException {
             let mut vec = Vec::new();
             for err in errors {
                 if let Bson::Document(ref doc) = *err {
-                    vec.push(BulkWriteError::parse(doc.clone())?);
+                    vec.push(BulkWriteError::parse(&doc)?);
                 } else {
                     return Err(Error::ResponseError("WriteError provided was not \
                                                                   a bson document.".to_string()));
