@@ -14,6 +14,7 @@ use connstring::{self, ConnectionString};
 use apm::{CommandStarted, CommandResult};
 use command_type::CommandType;
 use pool::PooledStream;
+use pool::DEFAULT_POOL_SIZE;
 use db::Database;
 use bson::{self, Bson};
 use error::Result;
@@ -25,45 +26,45 @@ pub struct MongoClient {
 }
 
 pub struct ClientInner {
-    pub read_preference: ReadPreference,
-    pub read_concern: ReadConcern,
-    pub write_concern: WriteConcern,
-    request_id: Arc<AtomicIsize>,
+    request_id: AtomicIsize,
     topology: Topology,
     pub listener: Listener,
+    pub options: ClientOptions,
     log_file: Option<Mutex<File>>
 }
 
-#[derive(Default)]
+#[derive(Clone)]
 pub struct ClientOptions {
     pub log_file: Option<String>,
-    pub read_preference: Option<ReadPreference>,
-    pub read_concern: Option<ReadConcern>,
-    pub write_concern: Option<WriteConcern>,
+    pub read_preference: ReadPreference,
+    pub read_concern: ReadConcern,
+    pub write_concern: WriteConcern,
     pub heartbeat_frequency_ms: u32,
     pub server_selection_timeout_ms: i64,
     pub local_threshold_ms: i64,
-    pub stream_connector:  StreamConnector
+    pub stream_connector:  StreamConnector,
+    pub pool_size: usize
 }
 
 impl ClientOptions {
     pub fn new() -> ClientOptions {
+        ClientOptions::default()
+    }
+}
+
+impl Default for ClientOptions {
+    fn default() -> Self {
         ClientOptions {
             log_file: None,
-            read_preference: None,
-            read_concern: None,
-            write_concern: None,
+            read_preference: ReadPreference::new(ReadMode::Primary, None),
+            read_concern: ReadConcern::new(),
+            write_concern: WriteConcern::new(),
             heartbeat_frequency_ms: DEFAULT_HEARTBEAT_FREQUENCY_MS,
             server_selection_timeout_ms: DEFAULT_SERVER_SELECTION_TIMEOUT_MS,
             local_threshold_ms: DEFAULT_LOCAL_THRESHOLD_MS,
+            pool_size: DEFAULT_POOL_SIZE,
             stream_connector: StreamConnector::default()
         }
-    }
-
-    pub fn with_log_file(file: &str) -> ClientOptions {
-        let mut options = ClientOptions::new();
-        options.log_file = Some(file.to_string());
-        options
     }
 }
 
@@ -100,31 +101,25 @@ impl MongoClient {
         is_send::<MongoClient>();
         is_sync::<MongoClient>();
 
-        let client_options = options.unwrap_or_else(ClientOptions::new);
-
-        let rp = client_options.read_preference.unwrap_or_else(|| ReadPreference::new(ReadMode::Primary, None));
-        let rc = client_options.read_concern.unwrap_or_else(ReadConcern::new);
-        let wc = client_options.write_concern.unwrap_or_else(WriteConcern::new);
+        let client_options = options.unwrap_or_else(ClientOptions::default);
 
         let listener = Listener::new();
         let file = match client_options.log_file {
-            Some(string) => {
+            Some(ref string) => {
                 let _ = listener.add_start_hook(log_command_started);
                 let _ = listener.add_completion_hook(log_command_completed);
-                Some(Mutex::new(OpenOptions::new().write(true).append(true).create(true).open(&string)?))
+                Some(Mutex::new(OpenOptions::new().write(true).append(true).create(true).open(string)?))
             }
             None => None
         };
 
         let client = MongoClient {
             inner: Arc::new(ClientInner {
-                request_id: Arc::new(ATOMIC_ISIZE_INIT),
+                request_id: ATOMIC_ISIZE_INIT,
                 topology: Topology::new(config.clone(), description, client_options.stream_connector.clone())?,
                 listener,
-                read_preference: rp,
-                read_concern: rc,
-                write_concern: wc,
-                log_file: file,
+                options: client_options.clone(),
+                log_file: file
             })
         };
 

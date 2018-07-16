@@ -83,9 +83,9 @@ impl Database {
         is_send::<MongoClient>();
         is_sync::<MongoClient>();
 
-        let rp = read_preference.unwrap_or_else(|| client.inner.read_preference.clone());
-        let rc = read_concern.unwrap_or_else(|| client.inner.read_concern.clone());
-        let wc = write_concern.unwrap_or_else(|| client.inner.write_concern.clone());
+        let rp = read_preference.unwrap_or_else(|| client.inner.options.read_preference.clone());
+        let rc = read_concern.unwrap_or_else(|| client.inner.options.read_concern.clone());
+        let wc = write_concern.unwrap_or_else(|| client.inner.options.write_concern.clone());
 
         Database {
             inner: Arc::new(DatabaseInner {

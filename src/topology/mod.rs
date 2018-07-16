@@ -514,8 +514,8 @@ impl TopologyDescription {
         host: &Host,
         description: &Arc<RwLock<ServerDescription>>,
         client: &MongoClient,
-        top_arc: &Arc<RwLock<TopologyDescription>>)
-    {
+        top_arc: &Arc<RwLock<TopologyDescription>>
+    ) {
         self.update_private(&host, &description, &client, &top_arc, false);
     }
 
@@ -525,8 +525,8 @@ impl TopologyDescription {
         host: &Host,
         description: &Arc<RwLock<ServerDescription>>,
         client: &MongoClient,
-        top_arc: &Arc<RwLock<TopologyDescription>>)
-    {
+        top_arc: &Arc<RwLock<TopologyDescription>>
+    ) {
         self.update_private(&host, &description, &client, &top_arc, true);
     }
 

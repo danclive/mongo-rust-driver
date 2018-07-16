@@ -216,7 +216,7 @@ impl Server {
         let host_clone = host.clone();
         let desc_clone = description.clone();
 
-        let pool = Arc::new(ConnectionPool::new(host.clone(), connector.clone()));
+        let pool = Arc::new(ConnectionPool::with_size(host.clone(), connector.clone(), client.inner.options.pool_size));
 
         // Fails silently
         let monitor = Arc::new(Monitor::new(
