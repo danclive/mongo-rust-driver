@@ -118,7 +118,7 @@ fn encode_array<W>(writer: &mut W, arr: &[Bson]) -> EncodeResult<()>
     Ok(())
 }
 
-pub fn encode_object<'a, S, W, D> (writer: &mut W, doc: D) -> EncodeResult<()>
+pub fn encode_document<'a, S, W, D> (writer: &mut W, doc: D) -> EncodeResult<()>
     where S: AsRef<str> + 'a, W: Write + ?Sized, D: IntoIterator<Item = (&'a S, &'a Bson)>
 {
     let mut buf = Vec::new();
@@ -146,7 +146,7 @@ fn encode_bson<W>(writer: &mut W, key: &str, val: &Bson) -> EncodeResult<()>
         Bson::Double(v) => write_f64(writer, v),
         Bson::String(ref v) => write_string(writer, &v),
         Bson::Array(ref v) => encode_array(writer, &v),
-        Bson::Document(ref v) => encode_object(writer, v),
+        Bson::Document(ref v) => encode_document(writer, v),
         Bson::Boolean(v) => writer.write_u8(if v { 0x01 } else { 0x00 }).map_err(From::from),
         Bson::RegExp(ref pat, ref opt) => {
             write_cstring(writer, pat)?;
@@ -157,7 +157,7 @@ fn encode_bson<W>(writer: &mut W, key: &str, val: &Bson) -> EncodeResult<()>
         Bson::JavaScriptCodeWithScope(ref code, ref scope) => {
             let mut buf = Vec::new();
             write_string(&mut buf, code)?;
-            encode_object(&mut buf, scope)?;
+            encode_document(&mut buf, scope)?;
 
             write_i32(writer, buf.len() as i32 + 4)?;
             writer.write_all(&buf).map_err(From::from)

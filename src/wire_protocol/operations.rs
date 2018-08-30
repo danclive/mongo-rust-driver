@@ -24,7 +24,7 @@ impl ByteLength for bson::Document {
     fn byte_length(&self) -> Result<i32> {
         let mut temp_buffer = vec![];
 
-        bson::encode::encode_object(&mut temp_buffer, self)?;
+        bson::encode::encode_document(&mut temp_buffer, self)?;
         Ok(temp_buffer.len() as i32)
     }
 }
@@ -140,7 +140,7 @@ impl Message {
     ///
     /// Returns nothing on success, or an Error on failure.
     fn write_bson_document<W: Write>(buffer: &mut W, bson: &bson::Document) -> Result<()> {
-        bson::encode::encode_object(buffer, bson)?;
+        bson::encode::encode_document(buffer, bson)?;
 
         Ok(())
     }

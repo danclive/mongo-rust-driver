@@ -75,6 +75,8 @@ impl OpMsg {
             buffer.write(&section.payload)?;
         }
 
+        let _ = buffer.flush()?;
+
         Ok(())
     }
 
@@ -84,8 +86,6 @@ impl OpMsg {
         let request_id = buffer.read_i32::<LittleEndian>()?;
         let response_to = buffer.read_i32::<LittleEndian>()?;
         let op_code = buffer.read_i32::<LittleEndian>()?;
-
-        println!("len: {:?}", len);
 
         len -= 16; // header len
 
@@ -108,7 +108,7 @@ impl OpMsg {
             let size = buffer.read(&mut payload_len_buf)?;
 
             if size < 4 {
-                return Err(ResponseError("Expected to read payload_len".to_owned()))
+                return Err(ResponseError("Expected to read payload_len: the len must be longer then 4 bits".to_owned()))
             }
 
             let payload_len = {
@@ -122,7 +122,7 @@ impl OpMsg {
             let size = buffer.read(&mut payload_buf)?;
 
             if size < (payload_len - 4) as usize {
-                return Err(ResponseError("Expected to read payload".to_owned()))
+                return Err(ResponseError("Expected to read payload: the payload was not long enough".to_owned()))
             }
 
             let mut payload = payload_len_buf.to_vec();

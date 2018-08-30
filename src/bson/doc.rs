@@ -2,6 +2,7 @@ use std::fmt;
 use std::error;
 use std::result;
 use std::iter::{FromIterator, Map};
+use std::io::{Read, Write, Cursor};
 
 use linked_hash_map::{self, LinkedHashMap};
 use chrono::{DateTime, Utc};
@@ -10,6 +11,8 @@ use object_id::ObjectId;
 use super::bson::Bson;
 use super::bson::Array;
 use super::spec::BinarySubtype;
+use super::encode::encode_document;
+use super::decode::decode_document;
 
 
 #[derive(PartialEq)]
@@ -219,6 +222,29 @@ impl Document {
     /// Extends an other document.
     pub fn extend<I: Into<Document>>(&mut self, iter: I) {
         self.inner.extend(iter.into());
+    }
+
+    #[inline]
+    pub fn to_vec(&self) -> Vec<u8>{
+        let mut buf = Vec::new();
+        encode_document(&mut buf, self).unwrap();
+        buf
+    }
+
+    #[inline]
+    pub fn to_writer<W: Write>(&self, writer: &mut W) {
+        encode_document(writer, self).unwrap();
+    }
+
+    #[inline]
+    pub fn from_slice(slice: &[u8]) -> Document {
+        let mut reader = Cursor::new(slice);
+        decode_document(&mut reader).unwrap()
+    }
+
+    #[inline]
+    pub fn from_reader<R>(reader: &mut Read) -> Document {
+        decode_document(reader).unwrap()
     }
 }
 
