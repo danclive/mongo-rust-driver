@@ -33,3 +33,4 @@ pub mod collection;
 pub mod gridfs;
 pub mod wire_protocol;
 pub mod auth;
+pub mod message;
