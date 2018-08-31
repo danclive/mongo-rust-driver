@@ -6,8 +6,10 @@ use std::io::Cursor;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
 use error::Result;
+use bson::Document;
+use bson::encode::EncodeResult;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Header {
     //message_length: i32,
     pub request_id: i32,
@@ -15,13 +17,38 @@ pub struct Header {
     pub op_code: i32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Section {
     pub payload_type: u8,
     pub payload: Vec<u8>
 }
 
 impl Section {
+    pub fn from_document(doc: Document) -> EncodeResult<Section> {
+        Ok(Section {
+            payload_type: 0,
+            payload: doc.to_vec()?
+        })
+    }
+
+    pub fn from_documents(identifier: &str, docs: Vec<Document>) -> EncodeResult<Section> {
+        let mut buf = Vec::new();
+
+        // write size position
+        buf.write_i32::<LittleEndian>(0)?;
+        // write identifier
+        write_cstring(&mut buf, identifier)?;
+        // write documents
+        for doc in &docs {
+            doc.to_writer(&mut buf)?;
+        }
+
+        Ok(Section {
+            payload_type: 1,
+            payload: buf
+        })
+    }
+
     pub fn len(&self) -> usize {
         self.payload.len() + 1
     }
@@ -35,7 +62,7 @@ bitflags! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OpMsg {
     pub header: Header,
     pub flag_bits: OpMsgFlags,
@@ -44,6 +71,10 @@ pub struct OpMsg {
 }
 
 impl OpMsg {
+    pub fn builder() -> OpMsgBuilder {
+        OpMsgBuilder::new()
+    }
+
     pub fn len(&self) -> usize {
         // header + flags + len of each section + optional checksum
         let mut len = 16 + 4; // header and flag
@@ -118,15 +149,15 @@ impl OpMsg {
                 i32::from(payload_len_buf[3]) << 24
             };
 
-            let mut payload_buf = vec![0u8; (payload_len - 4) as usize];
-            let size = buffer.read(&mut payload_buf)?;
-
-            if size < (payload_len - 4) as usize {
-                return Err(ResponseError("Expected to read payload: the payload was not long enough".to_owned()))
-            }
-
             let mut payload = payload_len_buf.to_vec();
-            payload.append(&mut payload_buf);
+
+            while payload.len() < payload_len as usize {
+                let mut buf = [0; 1024 * 4];
+
+                let size = buffer.read(&mut buf)?;
+
+                payload.write(&buf[0..size])?;
+            }
 
             let section = Section {
                 payload_type,
@@ -157,6 +188,55 @@ impl OpMsg {
     }
 }
 
-// struct OpMsgBuilder {
-//     request_id: i32,
-// }
+pub struct OpMsgBuilder {
+    op_msg: OpMsg
+}
+
+impl OpMsgBuilder {
+    pub fn new() -> OpMsgBuilder {
+        OpMsgBuilder {
+            op_msg: OpMsg {
+                header: Header {
+                    request_id: 0,
+                    response_to: 0,
+                    op_code: 2013
+                },
+                flag_bits: OpMsgFlags::empty(),
+                sections: Vec::new(),
+                checksum: 0
+            }
+        }
+    }
+
+    pub fn request_id(&mut self, request_id: i32) -> &mut OpMsgBuilder {
+        self.op_msg.header.request_id = request_id;
+        self
+    }
+
+    pub fn flag_bits(&mut self, flag_bits: OpMsgFlags) -> &mut OpMsgBuilder {
+        self.op_msg.flag_bits = flag_bits;
+        self
+    }
+
+    pub fn sections(&mut self, sections: Vec<Section>) -> &mut OpMsgBuilder {
+        self.op_msg.sections = sections;
+        self
+    }
+
+    pub fn push_section(&mut self, section: Section) -> &mut OpMsgBuilder {
+        self.op_msg.sections.push(section);
+        self
+    }
+
+    pub fn build(&self) -> &OpMsg {
+        &self.op_msg
+    }
+}
+
+fn write_cstring<W>(writer: &mut W, s: &str) -> EncodeResult<()>
+    where W: Write + ?Sized
+{
+    writer.write_all(s.as_bytes())?;
+    writer.write_u8(0)?;
+    Ok(())
+}

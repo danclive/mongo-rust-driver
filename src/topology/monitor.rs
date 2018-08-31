@@ -10,8 +10,8 @@ use client::MongoClient;
 use error::Result;
 use error::Error::{self, ArgumentError, OperationError};
 use bson::{Bson, Document};
-use db::Database;
-use command_type::CommandType;
+//use db::Database;
+//use command_type::CommandType;
 use connstring::{self, Host};
 use pool::ConnectionPool;
 use stream::StreamConnector;
@@ -250,11 +250,12 @@ impl Monitor {
 
     /// Returns an isMaster server response using an string monitor socket.
     pub fn is_master(&self) -> Result<(Document, i64)> {
-        let stream = self.personal_pool.acquire_stream()?;
+        let mut stream = self.personal_pool.acquire_stream()?;
 
         let time = chrono::Local::now();
         let start_ms = time.timestamp() * 1000 + i64::from(time.timestamp_subsec_millis());
 
+        /*
         let doc = Database::command_with_stream(
             &self.client,
             stream,
@@ -263,6 +264,31 @@ impl Monitor {
             &CommandType::IsMaster,
             false
         )?;
+        */
+
+        let doc = {
+            let mut stream = stream.get_socket();
+
+            use message::*;
+            
+            let mut msg_builder = OpMsg::builder();
+
+            let command = doc!{
+                "isMaster": 1,
+                "$db": "local"
+            };
+
+            let query_msg = msg_builder
+                .request_id(self.client.get_request_id())
+                .push_section(Section::from_document(command)?)
+                .build();
+
+            query_msg.write(stream)?;
+
+            let reply_msg = OpMsg::read(stream)?;
+
+            Document::from_slice(&reply_msg.sections[0].payload)?
+        };
 
         let end_time = chrono::Local::now();
         let end_ms = end_time.timestamp() * 1000 + i64::from(end_time.timestamp_subsec_millis());

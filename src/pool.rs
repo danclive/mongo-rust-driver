@@ -10,7 +10,7 @@ use stream::StreamConnector;
 
 use util::bufstream::BufStream;
 
-pub static DEFAULT_POOL_SIZE: usize = 5;
+pub static DEFAULT_POOL_SIZE: usize = 10;
 
 /// Handle connections to a MongoDB server.
 #[derive(Clone)]

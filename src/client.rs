@@ -15,7 +15,7 @@ use apm::{CommandStarted, CommandResult};
 use command_type::CommandType;
 use pool::PooledStream;
 use pool::DEFAULT_POOL_SIZE;
-use db::Database;
+//use db::Database;
 use bson::{self, Bson};
 use error::Result;
 use error::Error::ResponseError;
@@ -33,7 +33,7 @@ pub struct ClientInner {
     log_file: Option<Mutex<File>>
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ClientOptions {
     pub log_file: Option<String>,
     pub read_preference: ReadPreference,
@@ -146,7 +146,7 @@ impl MongoClient {
         Ok(client)
     }
 
-    pub fn get_req_id(&self) -> i32 {
+    pub fn get_request_id(&self) -> i32 {
         self.inner.request_id.fetch_add(1, Ordering::SeqCst) as i32
     }
 
@@ -159,33 +159,33 @@ impl MongoClient {
         self.inner.topology.acquire_write_stream()
     }
 
-    pub fn db(&self, db_name: &str) -> Database {
-        Database::open(self.clone(), db_name, None, None, None)
-    }
+    // pub fn db(&self, db_name: &str) -> Database {
+    //     Database::open(self.clone(), db_name, None, None, None)
+    // }
 
-    pub fn database_names(&self) -> Result<Vec<String>> {
-        let mut doc = bson::Document::new();
-        doc.insert("listDatabases", Bson::Int32(1));
+    // pub fn database_names(&self) -> Result<Vec<String>> {
+    //     let mut doc = bson::Document::new();
+    //     doc.insert("listDatabases", Bson::Int32(1));
 
-        let db = self.db("admin");
-        let res = db.command(doc, &CommandType::ListDatabases, None)?;
-        if let Some(&Bson::Array(ref batch)) = res.get("databases") {
-            // Extract database names
-            let map = batch.iter()
-                .filter_map(|bdoc| {
-                    if let Bson::Document(ref doc) = *bdoc {
-                        if let Some(&Bson::String(ref name)) = doc.get("name") {
-                            return Some(name.to_string());
-                        }
-                    }
-                    None
-                })
-            .collect();
-            return Ok(map);
-        }
+    //     let db = self.db("admin");
+    //     let res = db.command(doc, &CommandType::ListDatabases, None)?;
+    //     if let Some(&Bson::Array(ref batch)) = res.get("databases") {
+    //         // Extract database names
+    //         let map = batch.iter()
+    //             .filter_map(|bdoc| {
+    //                 if let Bson::Document(ref doc) = *bdoc {
+    //                     if let Some(&Bson::String(ref name)) = doc.get("name") {
+    //                         return Some(name.to_string());
+    //                     }
+    //                 }
+    //                 None
+    //             })
+    //         .collect();
+    //         return Ok(map);
+    //     }
 
-        Err(ResponseError("Server reply does not contain 'databases'.".to_string()))
-    }
+    //     Err(ResponseError("Server reply does not contain 'databases'.".to_string()))
+    // }
 }
 
 fn log_command_started(client: &MongoClient, command_started: &CommandStarted) {

@@ -11,9 +11,8 @@ use object_id::ObjectId;
 use super::bson::Bson;
 use super::bson::Array;
 use super::spec::BinarySubtype;
-use super::encode::encode_document;
-use super::decode::decode_document;
-
+use super::encode::{encode_document, EncodeResult};
+use super::decode::{decode_document, DecodeResult};
 
 #[derive(PartialEq)]
 pub enum Error {
@@ -224,27 +223,31 @@ impl Document {
         self.inner.extend(iter.into());
     }
 
+    pub fn front(&self) -> Option<(&String, &Bson)> {
+        self.inner.front()
+    }
+
     #[inline]
-    pub fn to_vec(&self) -> Vec<u8>{
+    pub fn to_vec(&self) -> EncodeResult<Vec<u8>> {
         let mut buf = Vec::new();
-        encode_document(&mut buf, self).unwrap();
-        buf
+        encode_document(&mut buf, self)?;
+        Ok(buf)
     }
 
     #[inline]
-    pub fn to_writer<W: Write>(&self, writer: &mut W) {
-        encode_document(writer, self).unwrap();
+    pub fn to_writer<W: Write>(&self, writer: &mut W) -> EncodeResult<()> {
+        encode_document(writer, self)
     }
 
     #[inline]
-    pub fn from_slice(slice: &[u8]) -> Document {
+    pub fn from_slice(slice: &[u8]) -> DecodeResult<Document> {
         let mut reader = Cursor::new(slice);
-        decode_document(&mut reader).unwrap()
+        decode_document(&mut reader)
     }
 
     #[inline]
-    pub fn from_reader<R>(reader: &mut Read) -> Document {
-        decode_document(reader).unwrap()
+    pub fn from_reader<R>(reader: &mut Read) -> DecodeResult<Document> {
+        decode_document(reader)
     }
 }
 
