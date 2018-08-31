@@ -32,14 +32,16 @@ impl FromStr for ReadMode {
 pub struct ReadPreference {
     /// Indicates how a server should be selected during read operations.
     pub mode: ReadMode,
+    pub max_staleness_seconds: Option<i32>,
     /// Filters servers based on the first tag set that matches at least one server.
     pub tag_sets: Vec<BTreeMap<String, String>>,
 }
 
 impl ReadPreference {
-    pub fn new(mode: ReadMode, tag_sets: Option<Vec<BTreeMap<String, String>>>) -> ReadPreference {
+    pub fn new(mode: ReadMode, max_staleness_seconds: Option<i32>, tag_sets: Option<Vec<BTreeMap<String, String>>>) -> ReadPreference {
         ReadPreference {
             mode,
+            max_staleness_seconds,
             tag_sets: tag_sets.unwrap_or_else(Vec::new),
         }
     }
@@ -57,7 +59,14 @@ impl ReadPreference {
             })
             .collect();
 
-        doc.insert("tag_sets", Bson::Array(bson_tag_sets));
+        if let Some(seconds) = self.max_staleness_seconds {
+            doc.insert("maxStalenessSeconds", seconds);
+        }
+
+        if bson_tag_sets.len() > 0 {
+            doc.insert("tag_sets", Bson::Array(bson_tag_sets));
+        }
+
         doc
     }
 }
@@ -66,30 +75,36 @@ impl ReadPreference {
 pub struct WriteConcern {
     /// Write replication
     pub w: i32,
+    pub w_str: String,
     /// Used in conjunction with 'w'. Propagation timeout in ms.
     pub w_timeout: i32,
     /// If true, will block until write operations have been committed to journal.
-    pub j: bool,
-    /// If true and server is not journaling, blocks until server has synced all data files to disk.
-    pub fsync: bool,
+    pub j: bool
 }
 
 impl WriteConcern {
     pub fn new() -> WriteConcern {
         WriteConcern {
             w: 1,
+            w_str: String::new(),
             w_timeout: 0,
-            j: false,
-            fsync: false,
+            j: false
         }
     }
 
     pub fn to_document(&self) -> Document {
-        doc!{
-            "w": self.w,
+        let mut doc = doc!{
             "wtimeout": self.w_timeout,
             "j": self.j
+        };
+
+        if self.w_str != "" {
+            doc.insert("w", self.w_str.clone());
+        } else {
+            doc.insert("w", self.w);
         }
+
+        doc
     }
 }
 

@@ -246,7 +246,7 @@ impl Document {
     }
 
     #[inline]
-    pub fn from_reader<R>(reader: &mut Read) -> DecodeResult<Document> {
+    pub fn from_reader<R: Read>(reader: &mut R) -> DecodeResult<Document> {
         decode_document(reader)
     }
 }

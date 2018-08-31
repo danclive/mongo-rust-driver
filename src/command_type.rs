@@ -80,7 +80,7 @@ impl CommandType {
             CommandType::FindOneAndReplace |
             CommandType::FindOneAndUpdate |
             CommandType::Insert |
-            CommandType::Update |
+            CommandType::Update => true,
             CommandType::Aggregate |
             CommandType::BuildInfo |
             CommandType::Count |

@@ -8,6 +8,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use error::Result;
 use bson::Document;
 use bson::encode::EncodeResult;
+use bson::decode::DecodeResult;
 
 #[derive(Debug, Clone)]
 pub struct Header {
@@ -47,6 +48,28 @@ impl Section {
             payload_type: 1,
             payload: buf
         })
+    }
+
+    pub fn to_document(&self) -> DecodeResult<Document> {
+
+        if self.payload_type == 1 {
+            let mut reader = Cursor::new(&self.payload);
+            // read identifier
+            let identifier = read_cstring(&mut reader)?;
+
+            let mut docs = Vec::new();
+            while reader.position() < self.payload.len() as u64 {
+                // read document
+                docs.push(Document::from_reader(&mut reader)?);
+            }
+
+            return Ok(doc!{
+                identifier: docs
+            })
+
+        } else {
+            return Ok(Document::from_slice(&self.payload)?)
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -186,6 +209,16 @@ impl OpMsg {
             checksum
         })
     }
+
+    pub fn get_document(&self) -> Result<Document> {
+        let mut doc = doc!{};
+
+        for section in &self.sections {
+            doc.extend(section.to_document()?);
+        }
+
+        Ok(doc)
+    }
 }
 
 pub struct OpMsgBuilder {
@@ -239,4 +272,18 @@ fn write_cstring<W>(writer: &mut W, s: &str) -> EncodeResult<()>
     writer.write_all(s.as_bytes())?;
     writer.write_u8(0)?;
     Ok(())
+}
+
+fn read_cstring<R: Read + ?Sized>(reader: &mut R) -> DecodeResult<String> {
+    let mut v = Vec::new();
+
+    loop {
+        let c = reader.read_u8()?;
+        if c == 0 {
+            break;
+        }
+        v.push(c);
+    }
+
+    Ok(String::from_utf8(v)?)
 }

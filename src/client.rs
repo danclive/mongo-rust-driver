@@ -56,7 +56,7 @@ impl Default for ClientOptions {
     fn default() -> Self {
         ClientOptions {
             log_file: None,
-            read_preference: ReadPreference::new(ReadMode::Primary, None),
+            read_preference: ReadPreference::new(ReadMode::Primary, None, None),
             read_concern: ReadConcern::new(),
             write_concern: WriteConcern::new(),
             heartbeat_frequency_ms: DEFAULT_HEARTBEAT_FREQUENCY_MS,
@@ -102,6 +102,9 @@ impl MongoClient {
         is_sync::<MongoClient>();
 
         let client_options = options.unwrap_or_else(ClientOptions::default);
+
+        // Todo parse options
+        // https://docs.mongodb.com/manual/reference/connection-string/index.html
 
         let listener = Listener::new();
         let file = match client_options.log_file {
@@ -151,7 +154,7 @@ impl MongoClient {
     }
 
     pub fn acquire_stream(&self, read_preference: ReadPreference)
-        -> Result<(PooledStream, bool, bool)> {
+        -> Result<(PooledStream, bool)> {
             self.inner.topology.acquire_stream(read_preference)
         }
 

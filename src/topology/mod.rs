@@ -169,7 +169,7 @@ impl TopologyDescription {
     }
 
     /// Returns a server stream for read operations.
-    pub fn acquire_stream(&self, read_preference: &ReadPreference) -> Result<(PooledStream, bool, bool)> {
+    pub fn acquire_stream(&self, read_preference: &ReadPreference) -> Result<(PooledStream, bool)> {
         let (mut hosts, rand) = self.choose_hosts(read_preference)?;
 
         // Filter hosts by tagsets
@@ -204,43 +204,43 @@ impl TopologyDescription {
         };
 
         // Determine how to handle server-side logic based on ReadMode and TopologyType.
-        let (slave_ok, send_read_pref) = match self.topology_type {
-            TopologyType::Unknown => (false, false),
+        let send_read_pref = match self.topology_type {
+            TopologyType::Unknown => false,
             TopologyType::Single => {
                 match server_type {
                     ServerType::Mongos => {
                         match read_preference.mode {
-                            ReadMode::Primary => (false, false),
+                            ReadMode::Primary => false,
                             ReadMode::SecondaryPreferred => {
-                                (true, !read_preference.tag_sets.is_empty())
+                               !read_preference.tag_sets.is_empty()
                             }
                             ReadMode::Secondary |
                             ReadMode::PrimaryPreferred |
-                            ReadMode::Nearest => (true, true),
+                            ReadMode::Nearest => true
                         }
                     }
-                    _ => (true, false),
+                    _ => false
                 }
             }
             TopologyType::ReplicaSetWithPrimary |
             TopologyType::ReplicaSetNoPrimary => {
                 match read_preference.mode {
-                    ReadMode::Primary => (false, false),
-                    _ => (true, false),
+                    ReadMode::Primary => false,
+                    _ => false
                 }
             }
             TopologyType::Sharded => {
                 match read_preference.mode {
-                    ReadMode::Primary => (false, false),
-                    ReadMode::SecondaryPreferred => (true, !read_preference.tag_sets.is_empty()),
+                    ReadMode::Primary => false,
+                    ReadMode::SecondaryPreferred => !read_preference.tag_sets.is_empty(),
                     ReadMode::Secondary |
                     ReadMode::PrimaryPreferred |
-                    ReadMode::Nearest => (true, true),
+                    ReadMode::Nearest => true
                 }
             }
         };
 
-        Ok((pooled_stream, slave_ok, send_read_pref))
+        Ok((pooled_stream, send_read_pref))
     }
 
     /// Returns a server stream for write operations.
@@ -832,8 +832,7 @@ impl Topology {
         let mut options = description.unwrap_or_else(|| TopologyDescription::new(connector));
 
         if config.hosts.len() > 1 && options.topology_type == TopologyType::Single {
-            return Err(ArgumentError("TopologyType::Single cannot be used with \
-                                                   multiple seeds.".to_string()));
+            return Err(ArgumentError("TopologyType::Single cannot be used with multiple seeds.".to_string()));
         }
 
         if let Some(ref config_opts) = config.options {
@@ -852,9 +851,9 @@ impl Topology {
         let top_description = Arc::new(RwLock::new(options));
 
         Ok(Topology {
-               config,
-               description: top_description,
-           })
+            config,
+            description: top_description,
+        })
     }
 
     // Private server stream acquisition helper.
@@ -862,7 +861,7 @@ impl Topology {
         &self,
         read_preference: &Option<ReadPreference>,
         write: bool
-    ) -> Result<(PooledStream, bool, bool)> {
+    ) -> Result<(PooledStream, bool)> {
         // Note start of server selection.
         let time = chrono::Local::now();
         let start_ms = time.timestamp() * 1000 + i64::from(time.timestamp_subsec_millis());
@@ -870,7 +869,7 @@ impl Topology {
         loop {
             let result = if write {
                 match self.description.read()?.acquire_write_stream() {
-                    Ok(stream) => Ok((stream, false, false)),
+                    Ok(stream) => Ok((stream, false)),
                     Err(err) => Err(err)
                 }
             } else {
@@ -895,13 +894,13 @@ impl Topology {
     }
 
     /// Returns a server stream for read operations.
-    pub fn acquire_stream(&self, read_preference: ReadPreference) -> Result<(PooledStream, bool, bool)> {
+    pub fn acquire_stream(&self, read_preference: ReadPreference) -> Result<(PooledStream, bool)> {
         self.acquire_stream_private(&Some(read_preference), false)
     }
 
     /// Returns a server stream for write operations.
     pub fn acquire_write_stream(&self) -> Result<PooledStream> {
-        let (stream, _, _) = self.acquire_stream_private(&None, true)?;
+        let (stream, _) = self.acquire_stream_private(&None, true)?;
         Ok(stream)
     }
 }
