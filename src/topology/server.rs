@@ -216,8 +216,6 @@ impl Server {
         let host_clone = host.clone();
         let desc_clone = description.clone();
 
-        println!("option: {:?}", client.inner.options);
-
         let pool = Arc::new(ConnectionPool::with_size(host.clone(), connector.clone(), client.inner.options.pool_size));
 
         // Fails silently

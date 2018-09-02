@@ -32,6 +32,7 @@ impl FromStr for ReadMode {
 pub struct ReadPreference {
     /// Indicates how a server should be selected during read operations.
     pub mode: ReadMode,
+    /// The read preference maxStalenessSeconds option lets you specify a maximum replication lag, or “staleness”, for reads from secondaries.
     pub max_staleness_seconds: Option<i32>,
     /// Filters servers based on the first tag set that matches at least one server.
     pub tag_sets: Vec<BTreeMap<String, String>>,
@@ -64,7 +65,7 @@ impl ReadPreference {
         }
 
         if bson_tag_sets.len() > 0 {
-            doc.insert("tag_sets", Bson::Array(bson_tag_sets));
+            doc.insert("tags", Bson::Array(bson_tag_sets));
         }
 
         doc
@@ -74,19 +75,30 @@ impl ReadPreference {
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct WriteConcern {
     /// Write replication
-    pub w: i32,
-    pub w_str: String,
+    pub w: W,
     /// Used in conjunction with 'w'. Propagation timeout in ms.
     pub w_timeout: i32,
     /// If true, will block until write operations have been committed to journal.
     pub j: bool
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum W {
+    Int32(i32),
+    Tag(String),
+    Majority
+}
+
+impl Default for W {
+    fn default() -> Self {
+        W::Int32(1)
+    }
+}
+
 impl WriteConcern {
     pub fn new() -> WriteConcern {
         WriteConcern {
-            w: 1,
-            w_str: String::new(),
+            w: W::Int32(1),
             w_timeout: 0,
             j: false
         }
@@ -98,10 +110,10 @@ impl WriteConcern {
             "j": self.j
         };
 
-        if self.w_str != "" {
-            doc.insert("w", self.w_str.clone());
-        } else {
-            doc.insert("w", self.w);
+        match self.w {
+            W::Int32(n) => { doc.insert("w", n); },
+            W::Tag(ref s) => { doc.insert("w", s); },
+            W::Majority => { doc.insert("w", "majority"); }
         }
 
         doc

@@ -12,7 +12,6 @@ use topology::server::Server;
 use stream::StreamConnector;
 use connstring::{self, ConnectionString};
 use apm::{CommandStarted, CommandResult};
-use command_type::CommandType;
 use pool::PooledStream;
 use pool::DEFAULT_POOL_SIZE;
 //use db::Database;

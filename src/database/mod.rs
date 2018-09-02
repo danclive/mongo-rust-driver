@@ -6,13 +6,11 @@ use std::fmt;
 use bson::{self, Bson, Document};
 
 use client::MongoClient;
-use command_type::CommandType;
 use common::{ReadPreference, WriteConcern, ReadConcern};
 use semver::Version;
-use error::{Result, ErrorCode};
+use error::Result;
 use error::Error::{CursorNotFoundError, OperationError, ResponseError, EventListenerError};
 use pool::PooledStream;
-use apm::{CommandStarted, CommandResult, EventRunner};
 
 
 

@@ -20,7 +20,7 @@ pub mod object_id;
 pub mod util;
 pub mod client;
 pub mod stream;
-pub mod command_type;
+//pub mod command_type;
 pub mod common;
 pub mod apm;
 pub mod topology;

@@ -15,6 +15,7 @@ use bson::{Bson, Document};
 use connstring::{self, Host};
 use pool::ConnectionPool;
 use stream::StreamConnector;
+use command::base_command;
 
 use super::server::{ServerDescription, ServerType};
 use super::{DEFAULT_HEARTBEAT_FREQUENCY_MS, TopologyDescription};
@@ -255,40 +256,12 @@ impl Monitor {
         let time = chrono::Local::now();
         let start_ms = time.timestamp() * 1000 + i64::from(time.timestamp_subsec_millis());
 
-        /*
-        let doc = Database::command_with_stream(
-            &self.client,
-            stream,
-            "local".to_owned(),
-            doc!{"isMaster": 1},
-            &CommandType::IsMaster,
-            false
-        )?;
-        */
-
-        let doc = {
-            let mut stream = stream.get_socket();
-
-            use message::*;
-            
-            let mut msg_builder = OpMsg::builder();
-
-            let command = doc!{
-                "isMaster": 1,
-                "$db": "local"
-            };
-
-            let query_msg = msg_builder
-                .request_id(self.client.get_request_id())
-                .push_section(Section::from_document(command)?)
-                .build();
-
-            query_msg.write(stream)?;
-
-            let reply_msg = OpMsg::read(stream)?;
-
-            Document::from_slice(&reply_msg.sections[0].payload)?
+        let command = doc!{
+            "isMaster": 1,
+            "$db": "local"
         };
+
+        let doc = base_command(&self.client, &mut stream, &command)?;
 
         let end_time = chrono::Local::now();
         let end_ms = end_time.timestamp() * 1000 + i64::from(end_time.timestamp_subsec_millis());

@@ -1,6 +1,5 @@
 use std::io::{Read, Write};
 use error::Error::{ArgumentError, ResponseError};
-use std::mem;
 use std::io::Cursor;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
@@ -25,14 +24,14 @@ pub struct Section {
 }
 
 impl Section {
-    pub fn from_document(doc: Document) -> EncodeResult<Section> {
+    pub fn from_document(doc: &Document) -> EncodeResult<Section> {
         Ok(Section {
             payload_type: 0,
             payload: doc.to_vec()?
         })
     }
 
-    pub fn from_documents(identifier: &str, docs: Vec<Document>) -> EncodeResult<Section> {
+    pub fn from_documents(identifier: &str, docs: &Vec<Document>) -> EncodeResult<Section> {
         let mut buf = Vec::new();
 
         // write size position
@@ -40,7 +39,7 @@ impl Section {
         // write identifier
         write_cstring(&mut buf, identifier)?;
         // write documents
-        for doc in &docs {
+        for doc in docs {
             doc.to_writer(&mut buf)?;
         }
 
@@ -114,6 +113,10 @@ impl OpMsg {
     }
 
     pub fn write<W: Write>(&self, buffer: &mut W) -> Result<()> {
+        if self.sections.is_empty() {
+            return Err(ArgumentError("The sections cannot be empty".to_string()))
+        }
+
         // write header
         buffer.write_i32::<LittleEndian>(self.len() as i32)?;
         buffer.write_i32::<LittleEndian>(self.header.request_id)?;

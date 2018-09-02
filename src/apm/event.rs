@@ -5,6 +5,7 @@ use error::Error as MongoError;
 use util::separator::Separatable;
 
 /// Contains the information about a given command that started.
+#[derive(Debug)]
 pub struct CommandStarted {
     pub command: Document,
     pub database_name: String,
@@ -27,10 +28,11 @@ impl Display for CommandStarted {
 }
 
 /// Contains the information about a given command that completed.
+#[derive(Debug)]
 pub enum CommandResult<'a> {
     Success {
         duration: u64,
-        reply: Document,
+        reply: &'a Document,
         command_name: String,
         request_id: i64,
         connection_string: String,
