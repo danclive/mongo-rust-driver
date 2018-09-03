@@ -261,7 +261,7 @@ impl Monitor {
             "$db": "local"
         };
 
-        let doc = base_command(&self.client, &mut stream, &command)?;
+        let doc = base_command(&self.client, &mut stream, command)?;
 
         let end_time = chrono::Local::now();
         let end_ms = end_time.timestamp() * 1000 + i64::from(end_time.timestamp_subsec_millis());

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use object_id::ObjectId;
 use bson::Document;
 
-use db::Database;
+use database::Database;
 use collection::Collection;
 use collection::options::FindOptions;
 use cursor::Cursor;

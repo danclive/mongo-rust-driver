@@ -38,12 +38,12 @@ macro_rules! try {
 pub fn base_command(
     client: &MongoClient,
     stream: &mut PooledStream,
-    command: &Document
+    command: Document
 ) -> Result<Document> {
     let mut msg_builder = OpMsg::builder();
     let request_msg = msg_builder
         .request_id(client.get_request_id())
-        .push_section(Section::from_document(command)?)
+        .push_section(Section::from_document(&command)?)
         .build();
 
     let socket = stream.get_socket();
@@ -74,7 +74,6 @@ pub fn base_command(
         return Err(Error::EventListenerError(None))
     }
 
-    //request_msg.write(socket)?;
     try!(
         client,
         u64::from((Instant::now() - init_time).subsec_nanos()),
@@ -84,7 +83,6 @@ pub fn base_command(
         request_msg.write(socket)
     );
 
-    //let response_msg = OpMsg::read(socket)?;
     let response_msg = try!(
         client,
         u64::from((Instant::now() - init_time).subsec_nanos()),
@@ -94,7 +92,6 @@ pub fn base_command(
         OpMsg::read(socket)
     );
 
-    //let doc = response_msg.get_document()?;
     let doc = try!(
         client,
         u64::from((Instant::now() - init_time).subsec_nanos()),
@@ -126,12 +123,12 @@ pub fn base_command(
 pub fn base_command_wihtout_hook(
     client: &MongoClient,
     stream: &mut PooledStream,
-    command: &Document
+    command: Document
 ) -> Result<Document> {
     let mut msg_builder = OpMsg::builder();
     let request_msg = msg_builder
         .request_id(client.get_request_id())
-        .push_section(Section::from_document(command)?)
+        .push_section(Section::from_document(&command)?)
         .build();
 
     let socket = stream.get_socket();
@@ -149,5 +146,27 @@ pub fn base_command_wihtout_hook(
     }
 
     Ok(doc)
+}
+
+pub fn is_write_command(name: &str) -> bool {
+
+    let names: Vec<_> = vec![
+        "aggregate",
+        "count",
+        "distinct",
+        "find",
+        "user",
+        "isMaster",
+        "usersInfo",
+        "listCollections",
+        "listDatabases",
+        "listIndexes"
+    ];
+
+    if names.contains(&name) {
+        return false
+    } else {
+        return true
+    }
 }
 

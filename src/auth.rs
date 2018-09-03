@@ -7,9 +7,8 @@ use ring::digest::{self, SHA1, SHA1_OUTPUT_LEN};
 use bson::Bson::{self, Binary};
 use bson::Document;
 use bson::spec::BinarySubtype::Generic;
-use command_type::CommandType::Suppressed;
 use data_encoding::BASE64;
-use db::Database;
+use database::Database;
 use error::Error::{DefaultError, MaliciousServerError, ResponseError};
 use error::MaliciousServerErrorType;
 use error::Result;
@@ -65,7 +64,7 @@ impl Authenticator {
             "mechanism": "SCRAM-SHA-1"
         };
 
-        let doc = self.db.command(start_doc, &Suppressed, None)?;
+        let doc = self.db.command(start_doc, None)?;
 
         let data = match doc.get("payload") {
             Some(&Binary(_, ref payload)) => payload.clone(),
@@ -205,7 +204,7 @@ impl Authenticator {
             "conversationId": initial_data.conversation_id.clone()
         };
 
-        let response = self.db.command(next_doc, &Suppressed, None)?;
+        let response = self.db.command(next_doc, None)?;
 
         Ok(AuthData {
             salted_password,
@@ -255,7 +254,7 @@ impl Authenticator {
                 }
             }
 
-            doc = self.db.command(final_doc.clone(), &Suppressed, None)?;
+            doc = self.db.command(final_doc.clone(), None)?;
 
             if let Some(&Bson::Boolean(true)) = doc.get("done") {
                 return Ok(());

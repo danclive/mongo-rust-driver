@@ -1,7 +1,7 @@
 //! Options for database-level commands.
 use bson::{Bson, Document};
 use common::WriteConcern;
-use db::roles::Role;
+use super::roles::Role;
 
 #[derive(Default)]
 pub struct CreateCollectionOptions {

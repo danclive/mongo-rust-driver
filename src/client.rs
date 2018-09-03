@@ -14,7 +14,7 @@ use connstring::{self, ConnectionString};
 use apm::{CommandStarted, CommandResult};
 use pool::PooledStream;
 use pool::DEFAULT_POOL_SIZE;
-//use db::Database;
+use database::Database;
 use bson::{self, Bson};
 use error::Result;
 use error::Error::ResponseError;
@@ -161,33 +161,33 @@ impl MongoClient {
         self.inner.topology.acquire_write_stream()
     }
 
-    // pub fn db(&self, db_name: &str) -> Database {
-    //     Database::open(self.clone(), db_name, None, None, None)
-    // }
+    pub fn db(&self, db_name: &str) -> Database {
+        Database::open(self.clone(), db_name, None, None, None)
+    }
 
-    // pub fn database_names(&self) -> Result<Vec<String>> {
-    //     let mut doc = bson::Document::new();
-    //     doc.insert("listDatabases", Bson::Int32(1));
+    pub fn database_names(&self) -> Result<Vec<String>> {
+        let mut doc = bson::Document::new();
+        doc.insert("listDatabases", Bson::Int32(1));
 
-    //     let db = self.db("admin");
-    //     let res = db.command(doc, &CommandType::ListDatabases, None)?;
-    //     if let Some(&Bson::Array(ref batch)) = res.get("databases") {
-    //         // Extract database names
-    //         let map = batch.iter()
-    //             .filter_map(|bdoc| {
-    //                 if let Bson::Document(ref doc) = *bdoc {
-    //                     if let Some(&Bson::String(ref name)) = doc.get("name") {
-    //                         return Some(name.to_string());
-    //                     }
-    //                 }
-    //                 None
-    //             })
-    //         .collect();
-    //         return Ok(map);
-    //     }
+        let db = self.db("admin");
+        let res = db.command(doc, None)?;
+        if let Some(&Bson::Array(ref batch)) = res.get("databases") {
+            // Extract database names
+            let map = batch.iter()
+                .filter_map(|bdoc| {
+                    if let Bson::Document(ref doc) = *bdoc {
+                        if let Some(&Bson::String(ref name)) = doc.get("name") {
+                            return Some(name.to_string());
+                        }
+                    }
+                    None
+                })
+            .collect();
+            return Ok(map);
+        }
 
-    //     Err(ResponseError("Server reply does not contain 'databases'.".to_string()))
-    // }
+        Err(ResponseError("Server reply does not contain 'databases'.".to_string()))
+    }
 }
 
 fn log_command_started(client: &MongoClient, command_started: &CommandStarted) {

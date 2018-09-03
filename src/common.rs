@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::fmt;
 use std::collections::BTreeMap;
 
 use bson::{Bson, Document};
@@ -28,6 +29,20 @@ impl FromStr for ReadMode {
     }
 }
 
+impl fmt::Display for ReadMode {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let string = match *self {
+            ReadMode::Primary => "primary",
+            ReadMode::PrimaryPreferred => "primaryPreferred",
+            ReadMode::Secondary => "secondary",
+            ReadMode::SecondaryPreferred => "secondaryPreferred",
+            ReadMode::Nearest => "nearest"
+        };
+
+        fmt.write_str(string)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ReadPreference {
     /// Indicates how a server should be selected during read operations.
@@ -48,7 +63,7 @@ impl ReadPreference {
     }
 
     pub fn to_document(&self) -> Document {
-        let mut doc = doc!{ "mode": stringify!(self.mode).to_ascii_lowercase() };
+        let mut doc = doc!{ "mode": self.mode.to_string() };
         let bson_tag_sets: Vec<_> = self.tag_sets
             .iter()
             .map(|map| {
