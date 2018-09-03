@@ -130,7 +130,7 @@ impl BulkWriteResult {
 
         match (index, id) {
             (Some(Bson::Int32(i)), Some(bson_id)) => {
-                let _ = upserted_ids.insert(start_index + i as i64, bson_id);
+                let _ = upserted_ids.insert(start_index + i64::from(i), bson_id);
                 1
             }
             (Some(Bson::Int64(i)), Some(bson_id)) => {
@@ -192,7 +192,7 @@ impl BulkWriteResult {
 
 impl BulkDeleteResult {
     /// Extracts server reply information into a result.
-    pub fn new(doc: Document, exception: Option<BulkWriteException>) -> BulkDeleteResult {
+    pub fn new(doc: &Document, exception: Option<BulkWriteException>) -> BulkDeleteResult {
         let n = match doc.get("n") {
             Some(&Bson::Int32(n)) => n,
             _ => 0,
@@ -208,7 +208,7 @@ impl BulkDeleteResult {
 
 impl BulkUpdateResult {
     /// Extracts server reply information into a result.
-    pub fn new(doc: Document, exception: Option<BulkWriteException>) -> BulkUpdateResult {
+    pub fn new(doc: &Document, exception: Option<BulkWriteException>) -> BulkUpdateResult {
         let n = match doc.get("n") {
             Some(&Bson::Int32(n)) => n,
             _ => 0,
@@ -241,7 +241,7 @@ impl InsertOneResult {
     pub fn new(inserted_id: Option<Bson>, exception: Option<WriteException>) -> InsertOneResult {
         InsertOneResult {
             acknowledged: true,
-            inserted_id: inserted_id,
+            inserted_id,
             write_exception: exception,
         }
     }
@@ -254,7 +254,7 @@ impl InsertManyResult {
                -> InsertManyResult {
         InsertManyResult {
             acknowledged: true,
-            inserted_ids: inserted_ids,
+            inserted_ids,
             bulk_write_exception: exception,
         }
     }
@@ -262,7 +262,7 @@ impl InsertManyResult {
 
 impl DeleteResult {
     /// Extracts server reply information into a result.
-    pub fn new(doc: Document, exception: Option<WriteException>) -> DeleteResult {
+    pub fn new(doc: &Document, exception: Option<WriteException>) -> DeleteResult {
         let n = match doc.get("n") {
             Some(&Bson::Int32(n)) => n,
             _ => 0,
@@ -291,7 +291,7 @@ impl DeleteResult {
 
 impl UpdateResult {
     /// Extracts server reply information into a result.
-    pub fn new(doc: Document, exception: Option<WriteException>) -> UpdateResult {
+    pub fn new(doc: &Document, exception: Option<WriteException>) -> UpdateResult {
         let n = match doc.get("n") {
             Some(&Bson::Int32(n)) => n,
             _ => 0,

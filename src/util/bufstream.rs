@@ -81,7 +81,7 @@ impl <S: Read + Write> BufStream<S> {
 }
 
 impl <S: Read + Write> Read for BufStream<S> {
-     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         if self.pos == self.cap && buf.len() >= self.reader.len() {
             return self.inner.as_mut().unwrap().read(buf);
         }
@@ -94,7 +94,7 @@ impl <S: Read + Write> Read for BufStream<S> {
         self.pos = cmp::min(self.pos + nread, self.cap);
 
         Ok(nread)
-     }
+    }
 }
 
 impl <S: Read + Write> Write for BufStream<S> {

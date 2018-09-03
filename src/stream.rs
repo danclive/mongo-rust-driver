@@ -2,7 +2,7 @@ use std::net::TcpStream;
 use std::io::Result;
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum StreamConnector {
     Tcp
 }

@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::fmt;
 use std::collections::BTreeMap;
 
 use bson::{Bson, Document};
@@ -28,24 +29,41 @@ impl FromStr for ReadMode {
     }
 }
 
+impl fmt::Display for ReadMode {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let string = match *self {
+            ReadMode::Primary => "primary",
+            ReadMode::PrimaryPreferred => "primaryPreferred",
+            ReadMode::Secondary => "secondary",
+            ReadMode::SecondaryPreferred => "secondaryPreferred",
+            ReadMode::Nearest => "nearest"
+        };
+
+        fmt.write_str(string)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ReadPreference {
     /// Indicates how a server should be selected during read operations.
     pub mode: ReadMode,
+    /// The read preference maxStalenessSeconds option lets you specify a maximum replication lag, or “staleness”, for reads from secondaries.
+    pub max_staleness_seconds: Option<i32>,
     /// Filters servers based on the first tag set that matches at least one server.
     pub tag_sets: Vec<BTreeMap<String, String>>,
 }
 
 impl ReadPreference {
-    pub fn new(mode: ReadMode, tag_sets: Option<Vec<BTreeMap<String, String>>>) -> ReadPreference {
+    pub fn new(mode: ReadMode, max_staleness_seconds: Option<i32>, tag_sets: Option<Vec<BTreeMap<String, String>>>) -> ReadPreference {
         ReadPreference {
-            mode: mode,
+            mode,
+            max_staleness_seconds,
             tag_sets: tag_sets.unwrap_or_else(Vec::new),
         }
     }
 
     pub fn to_document(&self) -> Document {
-        let mut doc = doc!{ "mode": (stringify!(self.mode).to_ascii_lowercase()) };
+        let mut doc = doc!{ "mode": self.mode.to_string() };
         let bson_tag_sets: Vec<_> = self.tag_sets
             .iter()
             .map(|map| {
@@ -57,7 +75,14 @@ impl ReadPreference {
             })
             .collect();
 
-        doc.insert("tag_sets", Bson::Array(bson_tag_sets));
+        if let Some(seconds) = self.max_staleness_seconds {
+            doc.insert("maxStalenessSeconds", seconds);
+        }
+
+        if bson_tag_sets.len() > 0 {
+            doc.insert("tags", Bson::Array(bson_tag_sets));
+        }
+
         doc
     }
 }
@@ -65,31 +90,48 @@ impl ReadPreference {
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct WriteConcern {
     /// Write replication
-    pub w: i32,
+    pub w: W,
     /// Used in conjunction with 'w'. Propagation timeout in ms.
     pub w_timeout: i32,
     /// If true, will block until write operations have been committed to journal.
-    pub j: bool,
-    /// If true and server is not journaling, blocks until server has synced all data files to disk.
-    pub fsync: bool,
+    pub j: bool
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum W {
+    Int32(i32),
+    Tag(String),
+    Majority
+}
+
+impl Default for W {
+    fn default() -> Self {
+        W::Int32(1)
+    }
 }
 
 impl WriteConcern {
     pub fn new() -> WriteConcern {
         WriteConcern {
-            w: 1,
+            w: W::Int32(1),
             w_timeout: 0,
-            j: false,
-            fsync: false,
+            j: false
         }
     }
 
     pub fn to_document(&self) -> Document {
-        doc!{
-            "w": self.w,
+        let mut doc = doc!{
             "wtimeout": self.w_timeout,
             "j": self.j
+        };
+
+        match self.w {
+            W::Int32(n) => { doc.insert("w", n); },
+            W::Tag(ref s) => { doc.insert("w", s); },
+            W::Majority => { doc.insert("w", "majority"); }
         }
+
+        doc
     }
 }
 
@@ -124,11 +166,11 @@ pub enum ReadConcernLevel {
 
 impl ReadConcernLevel {
     pub fn to_string(&self) -> String {
-        match self {
-            &ReadConcernLevel::Local => "local".to_owned(),
-            &ReadConcernLevel::Available => "available".to_owned(),
-            &ReadConcernLevel::Majority => "majority".to_owned(),
-            &ReadConcernLevel::Linearizable => "linearizable".to_owned()
+        match *self {
+            ReadConcernLevel::Local => "local".to_owned(),
+            ReadConcernLevel::Available => "available".to_owned(),
+            ReadConcernLevel::Majority => "majority".to_owned(),
+            ReadConcernLevel::Linearizable => "linearizable".to_owned()
         }
     }
 }

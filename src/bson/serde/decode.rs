@@ -112,28 +112,28 @@ impl<'de> Visitor<'de> for BsonVisitor {
     fn visit_i8<E>(self, value: i8) -> Result<Bson, E>
         where E: Error
     {
-        Ok(Bson::Int32(value as i32))
+        Ok(Bson::Int32(i32::from(value)))
     }
 
     #[inline]
     fn visit_u8<E>(self, value: u8) -> Result<Bson, E>
         where E: Error
     {
-        Err(Error::invalid_type(Unexpected::Unsigned(value as u64), &"a signed integer"))
+        Err(Error::invalid_type(Unexpected::Unsigned(u64::from(value)), &"a signed integer"))
     }
 
     #[inline]
     fn visit_i16<E>(self, value: i16) -> Result<Bson, E>
         where E: Error
     {
-        Ok(Bson::Int32(value as i32))
+        Ok(Bson::Int32(i32::from(value)))
     }
 
     #[inline]
     fn visit_u16<E>(self, value: u16) -> Result<Bson, E>
         where E: Error
     {
-        Err(Error::invalid_type(Unexpected::Unsigned(value as u64), &"a signed integer"))
+        Err(Error::invalid_type(Unexpected::Unsigned(u64::from(value)), &"a signed integer"))
     }
 
     #[inline]
@@ -147,7 +147,7 @@ impl<'de> Visitor<'de> for BsonVisitor {
     fn visit_u32<E>(self, value: u32) -> Result<Bson, E>
         where E: Error
     {
-        Err(Error::invalid_type(Unexpected::Unsigned(value as u64), &"a signed integer"))
+        Err(Error::invalid_type(Unexpected::Unsigned(u64::from(value)), &"a signed integer"))
     }
 
     #[inline]
@@ -216,10 +216,11 @@ impl<'de> Visitor<'de> for BsonVisitor {
         where V: MapAccess<'de>
     {
         let values = DocumentVisitor::new().visit_map(visitor)?;
-        Ok(Bson::from_extended_document(values.into()))
+        Ok(Bson::from_extended_document(values))
     }
 }
 
+#[derive(Default)]
 pub struct DocumentVisitor {
     marker: PhantomData<Document>
 }
@@ -329,7 +330,7 @@ impl<'de> Deserializer<'de> for Decoder {
                 visitor.visit_seq(
                     SeqDecoder {
                         iter: v.into_iter(),
-                        len: len,
+                        len,
                     }
                 )
             }
@@ -339,7 +340,7 @@ impl<'de> Deserializer<'de> for Decoder {
                     MapDecoder {
                         iter: v.into_iter(),
                         value: None,
-                        len: len,
+                        len,
                     }
                 )
             }
@@ -355,7 +356,7 @@ impl<'de> Deserializer<'de> for Decoder {
                     MapDecoder {
                         iter: doc.into_iter(),
                         value: None,
-                        len: len,
+                        len,
                     }
                 )
             }

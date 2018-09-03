@@ -6,9 +6,10 @@ use apm::event::{CommandStarted, CommandResult};
 use client::MongoClient;
 use error::{Error, Result};
 
-pub type StartHook = fn(MongoClient, &CommandStarted);
-pub type CompletionHook = fn(MongoClient, &CommandResult);
+pub type StartHook = fn(&MongoClient, &CommandStarted);
+pub type CompletionHook = fn(&MongoClient, &CommandResult);
 
+#[derive(Default)]
 pub struct Listener {
     no_start_hooks: AtomicBool,
     no_completion_hooks: AtomicBool,
@@ -33,7 +34,10 @@ impl Listener {
         };
 
         self.no_start_hooks.store(false, Ordering::SeqCst);
-        Ok(guard.deref_mut().push(hook))
+
+        guard.deref_mut().push(hook);
+
+        Ok(())
     }
 
     pub fn add_completion_hook(&self, hook: CompletionHook) -> Result<()> {
@@ -43,10 +47,13 @@ impl Listener {
         };
 
         self.no_completion_hooks.store(false, Ordering::SeqCst);
-        Ok(guard.deref_mut().push(hook))
+
+        guard.deref_mut().push(hook);
+
+        Ok(())
     }
 
-    pub fn run_start_hooks(&self, client: MongoClient, started: &CommandStarted) -> Result<()> {
+    pub fn run_start_hooks(&self, client: &MongoClient, started: &CommandStarted) -> Result<()> {
         if self.no_start_hooks.load(Ordering::SeqCst) {
             return Ok(());
         }
@@ -57,13 +64,13 @@ impl Listener {
         };
 
         for hook in guard.deref().iter() {
-            hook(client.clone(), started);
+            hook(&client, started);
         }
 
         Ok(())
     }
 
-    pub fn run_completion_hooks(&self, client: MongoClient, result: &CommandResult) -> Result<()> {
+    pub fn run_completion_hooks(&self, client: &MongoClient, result: &CommandResult) -> Result<()> {
         if self.no_completion_hooks.load(Ordering::SeqCst) {
             return Ok(());
         }
@@ -74,7 +81,7 @@ impl Listener {
         };
 
         for hook in guard.deref().iter() {
-            hook(client.clone(), result);
+            hook(&client, result);
         }
 
         Ok(())

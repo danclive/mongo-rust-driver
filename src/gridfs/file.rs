@@ -122,7 +122,7 @@ impl File {
     }
 
     /// A new file stream from a read file document.
-    pub fn with_doc(gfs: Store, doc: bson::Document) -> File {
+    pub fn with_doc(gfs: Store, doc: &bson::Document) -> File {
         File::with_gfs_file(gfs, GfsFile::with_doc(doc), Mode::Read)
     }
 
@@ -131,8 +131,8 @@ impl File {
         File {
             mutex: Arc::new(Mutex::new(())),
             condvar: Arc::new(Condvar::new()),
-            mode: mode,
-            gfs: gfs,
+            mode,
+            gfs,
             chunk_num: 0,
             offset: 0,
             wpending: Arc::new(ATOMIC_ISIZE_INIT),
@@ -167,8 +167,8 @@ impl File {
     }
 
     /// Ensures the file mode matches the desired mode.
-    pub fn assert_mode(&self, mode: Mode) -> Result<()> {
-        if self.mode != mode {
+    pub fn assert_mode(&self, mode: &Mode) -> Result<()> {
+        if &self.mode != mode {
             return match self.mode {
                 Mode::Read => Err(ArgumentError("File is open for reading.".to_string())),
                 Mode::Write => Err(ArgumentError("File is open for writing.".to_string())),
@@ -302,7 +302,7 @@ impl File {
         self.chunk_num += 1;
 
         // Pre-load the next file chunk for GridFS.
-        if (self.chunk_num as i64) * (self.doc.chunk_size as i64) < self.doc.len {
+        if i64::from(self.chunk_num) * i64::from(self.doc.chunk_size) < self.doc.len {
 
             let cache = Arc::new(Mutex::new(CachedChunk::new(self.chunk_num)));
 
@@ -348,7 +348,7 @@ impl File {
 
 impl io::Write for File {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.assert_mode(Mode::Write)?;
+        self.assert_mode(&Mode::Write)?;
 
         let mut guard = match self.mutex.lock() {
             Ok(guard) => guard,
@@ -441,7 +441,7 @@ impl io::Write for File {
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.assert_mode(Mode::Write)?;
+        self.assert_mode(&Mode::Write)?;
 
         let mut guard = match self.mutex.lock() {
             Ok(guard) => guard,
@@ -491,7 +491,7 @@ impl io::Write for File {
 
 impl io::Read for File {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.assert_mode(Mode::Read)?;
+        self.assert_mode(&Mode::Read)?;
 
         let _ = match self.mutex.lock() {
             Ok(guard) => guard,
@@ -504,7 +504,7 @@ impl io::Read for File {
         }
 
         // Read chunks into memory
-        if self.rbuf.len() < buf.len() && ((self.chunk_num) as i64) * (self.doc.chunk_size as i64) < self.doc.len {
+        if self.rbuf.len() < buf.len() && i64::from(self.chunk_num) * i64::from(self.doc.chunk_size) < self.doc.len {
             let chunk = self.get_chunk()?;
             self.rbuf.extend_from_slice(&chunk);
         }
@@ -538,7 +538,7 @@ impl GfsFile {
     /// Create a new GfsFile by ObjectId.
     pub fn new(id: ObjectId) -> GfsFile {
         GfsFile {
-            id: id,
+            id,
             chunk_size: DEFAULT_CHUNK_SIZE,
             name: None,
             len: 0,
@@ -553,7 +553,7 @@ impl GfsFile {
     /// Create a new GfsFile by filename and ObjectId.
     pub fn with_name(name: String, id: ObjectId) -> GfsFile {
         GfsFile {
-            id: id,
+            id,
             chunk_size: DEFAULT_CHUNK_SIZE,
             name: Some(name),
             len: 0,
@@ -566,7 +566,7 @@ impl GfsFile {
     }
 
     /// Read a GridFS file document into a new GfsFile.
-    pub fn with_doc(doc: bson::Document) -> GfsFile {
+    pub fn with_doc(doc: &bson::Document) -> GfsFile {
         let mut file: GfsFile;
 
         if let Some(&Bson::ObjectId(ref id)) = doc.get("_id") {
@@ -613,7 +613,7 @@ impl GfsFile {
             "chunkSize": self.chunk_size,
             "length": self.len,
             "md5": self.md5.to_string(),
-            "uploadDate": self.upload_date.as_ref().unwrap().clone()
+            "uploadDate": *self.upload_date.as_ref().unwrap()
         };
 
         if self.name.is_some() {
@@ -639,7 +639,7 @@ impl CachedChunk {
     // Create a new cached chunk to be post-populated with the binary data.
     pub fn new(n: i32) -> CachedChunk {
         CachedChunk {
-            n: n,
+            n,
             data: Vec::new(),
             err: Some(Error::DefaultError("Chunk has not yet been initialized".to_string())),
         }

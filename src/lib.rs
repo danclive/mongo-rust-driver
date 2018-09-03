@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "cargo-clippy", allow(map_entry))]
+
 extern crate linked_hash_map;
 extern crate chrono;
 extern crate serde;
@@ -18,16 +20,16 @@ pub mod object_id;
 pub mod util;
 pub mod client;
 pub mod stream;
-pub mod command_type;
 pub mod common;
 pub mod apm;
 pub mod topology;
 pub mod error;
 pub mod pool;
 pub mod connstring;
+pub mod database;
+pub mod message;
+pub mod command;
 pub mod cursor;
-pub mod db;
 pub mod collection;
-pub mod gridfs;
-pub mod wire_protocol;
 pub mod auth;
+pub mod gridfs;

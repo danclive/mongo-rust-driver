@@ -10,7 +10,7 @@ use stream::StreamConnector;
 
 use util::bufstream::BufStream;
 
-pub static DEFAULT_POOL_SIZE: usize = 5;
+pub static DEFAULT_POOL_SIZE: usize = 10;
 
 /// Handle connections to a MongoDB server.
 #[derive(Clone)]
@@ -81,11 +81,11 @@ impl ConnectionPool {
     /// Returns a connection pool with a specified capped size.
     pub fn with_size(host: Host, connector: StreamConnector, size: usize) -> ConnectionPool {
         ConnectionPool {
-            host: host,
+            host,
             wait_lock: Arc::new(Condvar::new()),
             inner: Arc::new(Mutex::new(Pool {
                 len: Arc::new(ATOMIC_USIZE_INIT),
-                size: size,
+                size,
                 sockets: Vec::with_capacity(size),
                 iteration: 0,
             })),

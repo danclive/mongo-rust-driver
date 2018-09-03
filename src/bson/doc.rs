@@ -2,6 +2,7 @@ use std::fmt;
 use std::error;
 use std::result;
 use std::iter::{FromIterator, Map};
+use std::io::{Read, Write, Cursor};
 
 use linked_hash_map::{self, LinkedHashMap};
 use chrono::{DateTime, Utc};
@@ -10,7 +11,8 @@ use object_id::ObjectId;
 use super::bson::Bson;
 use super::bson::Array;
 use super::spec::BinarySubtype;
-
+use super::encode::{encode_document, EncodeResult};
+use super::decode::{decode_document, DecodeResult};
 
 #[derive(PartialEq)]
 pub enum Error {
@@ -46,7 +48,7 @@ impl error::Error for Error {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 pub struct Document {
     inner: LinkedHashMap<String, Bson>
 }
@@ -58,7 +60,7 @@ impl Document {
         }
     }
 
-    pub fn iter<'a>(&'a self) -> DocumentIterator<'a> {
+    pub fn iter(&self) -> DocumentIterator<'_> {
         self.into_iter()
     }
 
@@ -219,6 +221,33 @@ impl Document {
     /// Extends an other document.
     pub fn extend<I: Into<Document>>(&mut self, iter: I) {
         self.inner.extend(iter.into());
+    }
+
+    pub fn front(&self) -> Option<(&String, &Bson)> {
+        self.inner.front()
+    }
+
+    #[inline]
+    pub fn to_vec(&self) -> EncodeResult<Vec<u8>> {
+        let mut buf = Vec::new();
+        encode_document(&mut buf, self)?;
+        Ok(buf)
+    }
+
+    #[inline]
+    pub fn to_writer<W: Write>(&self, writer: &mut W) -> EncodeResult<()> {
+        encode_document(writer, self)
+    }
+
+    #[inline]
+    pub fn from_slice(slice: &[u8]) -> DecodeResult<Document> {
+        let mut reader = Cursor::new(slice);
+        decode_document(&mut reader)
+    }
+
+    #[inline]
+    pub fn from_reader<R: Read>(reader: &mut R) -> DecodeResult<Document> {
+        decode_document(reader)
     }
 }
 

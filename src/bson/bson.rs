@@ -51,7 +51,7 @@ impl fmt::Debug for Bson {
             Bson::Int64(v) => write!(fmt, "Int64({:?})", v),
             Bson::TimeStamp(i) => {
                 let time = (i >> 32) as i32;
-                let inc = (i & 0xFFFFFFFF) as i32;
+                let inc = (i & 0xFFFF_FFFF) as i32;
 
                 write!(fmt, "TimeStamp({}, {})", time, inc)
             }
@@ -93,7 +93,7 @@ impl fmt::Display for Bson {
             Bson::Int64(i) => write!(fmt, "{}", i),
             Bson::TimeStamp(i) => {
                 let time = (i >> 32) as i32;
-                let inc = (i & 0xFFFFFFFF) as i32;
+                let inc = (i & 0xFFFF_FFFF) as i32;
 
                 write!(fmt, "Timestamp({}, {})", time, inc)
             }
@@ -109,7 +109,7 @@ impl fmt::Display for Bson {
 
 impl From<f32> for Bson {
     fn from(f: f32) -> Bson {
-        Bson::Double(f as f64)
+        Bson::Double(f64::from(f))
     }
 }
 
@@ -374,7 +374,7 @@ impl Bson {
             }
             Bson::TimeStamp(v) => {
                 let time = (v >> 32) as i32;
-                let inc = (v & 0xFFFFFFFF) as i32;
+                let inc = (v & 0xFFFF_FFFF) as i32;
 
                 doc!{
                     "t": time,
@@ -385,7 +385,7 @@ impl Bson {
                 let tval: u8 = From::from(t);
                 doc!{
                     "$binary": v.to_hex(),
-                    "type": tval as i64
+                    "type": i64::from(tval)
                 }
             }
             Bson::ObjectId(ref v) => {
@@ -396,7 +396,7 @@ impl Bson {
             Bson::UTCDatetime(ref v) => {
                 doc!{
                     "$date": {
-                        "$numberLong": (v.timestamp() * 1000) + v.nanosecond() as i64 / 1000000
+                        "$numberLong": v.timestamp() * 1000 + i64::from(v.nanosecond()) / 1_000_000
                     }
                 }
             }
@@ -422,7 +422,7 @@ impl Bson {
                 return Bson::JavaScriptCodeWithScope(code.to_owned(), scope.clone());
 
             } else if let (Ok(t), Ok(i)) = (values.get_i32("t"), values.get_i32("i")) {
-                let timestamp = ((t as i64) << 32) + (i as i64);
+                let timestamp = (i64::from(t) << 32) + i64::from(i);
                 return Bson::TimeStamp(timestamp);
 
             } else if let (Ok(t), Ok(i)) = (values.get_i64("t"), values.get_i64("i")) {
@@ -442,7 +442,7 @@ impl Bson {
                 return Bson::ObjectId(ObjectId::with_string(hex).unwrap());
 
             } else if let Ok(long) = values.get_document("$date").and_then(|inner| inner.get_i64("$numberLong")) {
-                return Bson::UTCDatetime(Utc.timestamp(long / 1000, ((long % 1000) * 1000000) as u32));
+                return Bson::UTCDatetime(Utc.timestamp(long / 1000, ((long % 1000) * 1_000_000) as u32));
             } else if let Ok(sym) = values.get_str("$symbol") {
                 return Bson::Symbol(sym.to_string());
             }
@@ -502,7 +502,7 @@ impl Into<Value> for Bson {
             Bson::Int64(v) => v.into(),
             Bson::TimeStamp(v) => {
                 let time = v >> 32;
-                let inc = v & 0x0000FFFF;
+                let inc = v & 0x0000_FFFF;
                 json!({
                     "t": time,
                     "i": inc
@@ -519,7 +519,7 @@ impl Into<Value> for Bson {
             Bson::UTCDatetime(v) => {
                 json!({
                     "$date": {
-                        "$numberLong": (v.timestamp() * 1000) + ((v.nanosecond() / 1000000) as i64)
+                        "$numberLong": (v.timestamp() * 1000) + i64::from(v.nanosecond() / 1_000_000)
                     }
                 })
             }

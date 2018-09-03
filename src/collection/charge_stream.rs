@@ -41,11 +41,11 @@ impl ChargeStream {
         let cursor = collection.aggregate(full_pipeline, Some(aggregate_options))?;
 
         let charge_stream = ChargeStream {
-            collection: collection,
-            pipeline: pipeline,
-            options: options,
+            collection,
+            pipeline,
+            options,
             resume_token: Document::new(),
-            cursor: cursor
+            cursor
         };
 
         Ok(charge_stream)

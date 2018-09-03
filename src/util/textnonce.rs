@@ -6,7 +6,7 @@ use std::error;
 
 use data_encoding::{BASE64, BASE64URL};
 use chrono;
-use rand::{self, Rng};
+use rand::{self, RngCore};
 use byteorder::{LittleEndian, WriteBytesExt};
 
 pub type Result<T> = result::Result<T, Error>;
@@ -39,7 +39,7 @@ impl error::Error for Error {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 pub struct TextNonce(pub String);
 
 impl TextNonce {
@@ -102,7 +102,7 @@ impl fmt::Display for TextNonce {
 
 impl Deref for TextNonce {
     type Target = str;
-    fn deref<'a>(&'a self) -> &'a str {
+    fn deref(&self) -> &str {
         &*self.0
     }
 }

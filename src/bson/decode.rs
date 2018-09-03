@@ -258,7 +258,7 @@ fn decode_bson<R: Read + ?Sized>(reader: &mut R, tag: u8) -> DecodeResult<Bson> 
         }
         Some(ElementType::UTCDatetime) => {
             let time = read_i64(reader)?;
-            Ok(Bson::UTCDatetime(Utc.timestamp(time / 1000, (time % 1000) as u32 * 1000000)))
+            Ok(Bson::UTCDatetime(Utc.timestamp(time / 1000, (time % 1000) as u32 * 1_000_000)))
         }
         Some(ElementType::Symbol) => {
             read_string(reader).map(Bson::Symbol)

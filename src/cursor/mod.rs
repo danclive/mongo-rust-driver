@@ -1,12 +1,11 @@
 
 use std::collections::vec_deque::VecDeque;
-use command_type::CommandType;
 use error::Result;
 use error::Error;
 
 use bson::{Bson, Document};
 use common::ReadPreference;
-use db::Database;
+use database::Database;
 
 // Allows the server to decide the batch size.
 pub const DEFAULT_BATCH_SIZE: i32 = 100;
@@ -27,14 +26,12 @@ pub struct Cursor {
     // A cache for documents received from the query that have not yet been returned.
     pub buffer: VecDeque<Document>,
     pub read_preference: Option<ReadPreference>,
-    pub command_type: CommandType,
 }
 
 impl Cursor {
     pub fn command(
         db: Database,
         command: Document,
-        command_type: CommandType,
         batch_size: Option<i32>,
         //limit: Option<i32>,
         max_time_ms: Option<i64>,
@@ -44,7 +41,7 @@ impl Cursor {
         //let limit = limit.unwrap_or_default();
         let max_time_ms = max_time_ms.unwrap_or_default();
 
-        let doc = db.command(command, command_type.clone(), read_preference.clone())?;
+        let doc = db.command(command, read_preference.clone())?;
 
         if let Some(&Bson::Int64(ref id)) = doc.get("id") {
             if let Some(&Bson::String(ref ns)) = doc.get("ns") {
@@ -59,15 +56,14 @@ impl Cursor {
                     }).collect();
 
                     return Ok(Cursor {
-                        db: db,
+                        db,
                         namespace: ns.to_owned(),
-                        batch_size: batch_size,
+                        batch_size,
                         cursor_id: *id,
-                        max_time_ms: max_time_ms,
+                        max_time_ms,
                         count: 0,
                         buffer: map,
-                        read_preference: read_preference,
-                        command_type: command_type
+                        read_preference,
                     })
                 }
             }
@@ -106,14 +102,14 @@ impl Cursor {
                 "maxTimeMS": self.max_time_ms
             };
 
-            let doc = self.db.command(get_more_command, CommandType::GetMore, self.read_preference.clone())?;
+            let doc = self.db.command(get_more_command, self.read_preference.clone())?;
 
             if let Some(&Bson::Int64(ref id)) = doc.get("id") {
                 self.cursor_id = *id;
 
                 if let Some(&Bson::Array(ref batch)) = doc.get("nextBatch") {
                     for doc in batch {
-                        if let &Bson::Document(ref doc) = doc {
+                        if let Bson::Document(ref doc) = *doc {
                             self.buffer.push_back(doc.clone());
                         }
                     }
@@ -209,7 +205,6 @@ impl Drop for Cursor {
                     "killCursors": self.name().clone(),
                     "cursors": [self.cursor_id]
                 },
-                CommandType::Find,
                 self.read_preference.clone()
             );
         }
