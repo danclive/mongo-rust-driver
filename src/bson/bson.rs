@@ -137,12 +137,6 @@ impl<'a> From<&'a String> for Bson {
     }
 }
 
-impl From<Array> for Bson {
-    fn from(a: Array) -> Bson {
-        Bson::Array(a)
-    }
-}
-
 impl From<Document> for Bson {
     fn from(d: Document) -> Bson {
         Bson::Document(d)
@@ -217,9 +211,9 @@ impl From<DateTime<Utc>> for Bson {
     }
 }
 
-impl From<Vec<Document>> for Bson {
-    fn from(vec: Vec<Document>) -> Bson {
-        vec.into_iter().map(Bson::Document).collect::<Vec<Bson>>().into()
+impl<T> From<Vec<T>> for Bson where Bson: From<T> {
+    fn from(vec: Vec<T>) -> Bson {
+        Bson::Array(vec.into_iter().map(|v| Bson::from(v)).collect::<Vec<Bson>>())
     }
 }
 
