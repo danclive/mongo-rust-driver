@@ -3,7 +3,9 @@ use std::collections::BTreeMap;
 
 use object_id::ObjectId;
 use bson::{Bson, Document};
-use common::{ReadPreference, WriteConcern, ReadConcern};
+use read_preference::ReadPreference;
+use read_concern::ReadConcern;
+use write_concern::WriteConcern;
 use cursor::{Cursor, DEFAULT_BATCH_SIZE};
 use database::Database;
 use error::Result;
@@ -20,7 +22,7 @@ pub mod results;
 pub mod charge_stream;
 
 /// Interfaces with a MongoDB collection.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Collection {
     /// A reference to the database that spawned this collection.
     pub db: Database,

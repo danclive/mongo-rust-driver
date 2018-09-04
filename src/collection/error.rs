@@ -1,7 +1,7 @@
 //! Write errors for collection-level operations.
 use bson::{Bson, Document};
 use super::options::WriteModel;
-use common::WriteConcern;
+use write_concern::WriteConcern;
 use error::{Error, Result};
 use std::{error, fmt};
 

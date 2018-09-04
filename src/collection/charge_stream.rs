@@ -2,9 +2,10 @@ use bson::Document;
 use collection::Collection;
 use collection::options::{ChangeStreamOptions, AggregateOptions};
 use cursor::Cursor;
-use common::ReadConcern;
+use read_concern::ReadConcern;
 use error::{Result, Error};
 
+#[derive(Debug)]
 pub struct ChargeStream {
     pub collection: Collection,
     pub pipeline: Vec<Document>,

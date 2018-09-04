@@ -1,6 +1,6 @@
 [package]
 name            = "mongors"
-version         = "0.2.0"
+version         = "0.2.1"
 license         = "MIT"
 authors         = ["mitum <dangcheng@hotmail.com>"]
 description     = "Rust driver for MongoDB"

@@ -4,7 +4,8 @@ use std::fs::{File, OpenOptions};
 use std::ops::DerefMut;
 use std::io::Write;
 
-use common::{ReadPreference, WriteConcern, ReadConcern, ReadMode};
+//use common::{ReadPreference, WriteConcern, ReadConcern, ReadMode};
+
 use apm::Listener;
 use topology::{Topology, TopologyDescription, TopologyType, DEFAULT_HEARTBEAT_FREQUENCY_MS, 
     DEFAULT_SERVER_SELECTION_TIMEOUT_MS, DEFAULT_LOCAL_THRESHOLD_MS};
@@ -15,6 +16,9 @@ use apm::{CommandStarted, CommandResult};
 use pool::PooledStream;
 use pool::DEFAULT_POOL_SIZE;
 use database::Database;
+use read_preference::{ReadPreference, ReadMode};
+use read_concern::ReadConcern;
+use write_concern::WriteConcern;
 use bson::{self, Bson};
 use error::Result;
 use error::Error::ResponseError;

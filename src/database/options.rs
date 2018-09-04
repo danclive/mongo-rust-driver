@@ -1,6 +1,6 @@
 //! Options for database-level commands.
 use bson::{Bson, Document};
-use common::WriteConcern;
+use write_concern::WriteConcern;
 use super::roles::Role;
 
 #[derive(Default)]

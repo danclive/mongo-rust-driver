@@ -1,10 +1,9 @@
-
 use std::collections::vec_deque::VecDeque;
 use error::Result;
 use error::Error;
 
 use bson::{Bson, Document};
-use common::ReadPreference;
+use read_preference::ReadPreference;
 use database::Database;
 
 // Allows the server to decide the batch size.

@@ -4,7 +4,9 @@ use std::error::Error as stdError;
 
 use bson::{self, Bson, Document};
 use client::MongoClient;
-use common::{ReadPreference, WriteConcern, ReadConcern};
+use read_preference::ReadPreference;
+use read_concern::ReadConcern;
+use write_concern::WriteConcern;
 use semver::Version;
 use error::{Result, Error};
 use command::{base_command, is_write_command};
@@ -68,7 +70,6 @@ impl Database {
 
     pub fn command(&self, command: Document, read_preference: Option<ReadPreference>) -> Result<Document> {
         let read_preference = read_preference.unwrap_or_else(|| self.inner.read_preference.clone());
-
         let command_name = {
             if let Some((ref command_name, _)) = command.front() {
                 command_name.to_string()

@@ -12,11 +12,9 @@ use object_id::ObjectId;
 use client::MongoClient;
 use error::Result;
 use error::Error::{self, ArgumentError, OperationError};
-
-use common::{ReadPreference, ReadMode};
+use read_preference::{ReadPreference, ReadMode};
 use connstring::{ConnectionString, Host};
 use pool::PooledStream;
-
 use stream::StreamConnector;
 use self::server::{Server, ServerDescription, ServerType};
 

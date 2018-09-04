@@ -1,7 +1,8 @@
 //! Options for collection-level operations.
 use bson::{Bson, Document};
-use common::{ReadPreference, WriteConcern, ReadConcern};
-
+use read_preference::ReadPreference;
+use read_concern::ReadConcern;
+use write_concern::WriteConcern;
 use error::Result;
 use error::Error::ArgumentError;
 
