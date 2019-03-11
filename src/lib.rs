@@ -7,3 +7,10 @@
 // }
 
 pub mod sys;
+pub mod core;
+pub mod error;
+pub mod uri;
+pub mod client;
+pub mod db;
+pub mod collection;
+pub mod cursor;
