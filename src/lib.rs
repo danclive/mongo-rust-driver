@@ -14,3 +14,11 @@ pub mod client;
 pub mod db;
 pub mod collection;
 pub mod cursor;
+pub mod read_preference;
+pub mod find_and_modify;
+
+pub use client::{MongoClient, Client};
+pub use db::DB;
+pub use collection::Collection;
+pub use read_preference::{ReadMode, ReadPreference};
+pub use cursor::Cursor;

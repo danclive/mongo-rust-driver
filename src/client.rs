@@ -1,8 +1,11 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
+use bsonrs::Document;
+
+use crate::core::bsonc::Bsonc;
 use crate::core::client_pool;
 use crate::core::client;
+use crate::core::collection::Collection;
 
 use crate::uri::Uri;
 use crate::db::DB;
@@ -44,30 +47,43 @@ impl MongoClient {
     }
 
     pub fn acquire_client(&self) -> Client {
-        let inner = self.inner.pool.pop();
+        let client = self.inner.pool.pop();
 
         Client {
-            client: self.clone(),
-            inner
+            mongo_client: self.clone(),
+            inner: client
         }
     }
 }
 
 pub struct Client {
-    client: MongoClient,
+    mongo_client: MongoClient,
     inner: client::Client
+}
+
+impl Client {
+    #[inline]
+    pub fn get_database_names_with_opts(&self, opts: &Document) -> Result<Vec<String>> {
+        let opts = Bsonc::from_doc(opts)?;
+        self.inner.get_database_names_with_opts(&opts)
+    }
+
+    #[inline]
+    pub fn get_collection(&self, db: &str, collection: &str) -> Collection {
+        self.inner.get_collection(db, collection)
+    }
 }
 
 impl Drop for Client {
     fn drop(&mut self) {
-        self.client.inner.pool.push(&self.inner)
+        self.mongo_client.inner.pool.push(&self.inner)
     }
 }
 
-impl Deref for Client {
-    type Target = client::Client;
+// impl Deref for Client {
+//     type Target = client::Client;
 
-    fn deref(&self) -> &client::Client {
-        &self.inner
-    }
-}
+//     fn deref(&self) -> &client::Client {
+//         &self.inner
+//     }
+// }

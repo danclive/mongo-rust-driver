@@ -48,14 +48,14 @@ impl Database {
 
     pub fn get_collection_names_with_opts(&self, opts: &Bsonc) -> Result<Vec<String>> {
         assert!(!self.0.is_null());
-        let mut err = MongocError::empty();
+        let mut error = MongocError::empty();
 
         let ptr = unsafe {
-            mongoc_database_get_collection_names_with_opts(self.0, opts.as_ptr(), err.mut_inner())
+            mongoc_database_get_collection_names_with_opts(self.0, opts.as_ptr(), error.as_mut_ptr())
         };
 
         if ptr.is_null() {
-            Err(err.into())
+            Err(error.into())
         } else {
             let mut vec_str = Vec::new();
 

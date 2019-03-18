@@ -1,6 +1,6 @@
 [package]
 name            = "mongors"
-version         = "0.2.2"
+version         = "0.3.0"
 license         = "MIT"
 authors         = ["mitum <dangcheng@hotmail.com>"]
 description     = "Rust driver for MongoDB"
@@ -10,6 +10,7 @@ homepage        = "https://github.com/mitum/mongo-rust-driver"
 repository      = "https://github.com/mitum/mongo-rust-driver"
 readme          = "README.md"
 edition         = "2018"
+exclude         = ["mongo-c-driver-*"]
 
 [dependencies]
 #linked-hash-map = "0.5"

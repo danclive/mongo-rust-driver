@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 
 use crate::sys::bsonc::*;
 use crate::sys::mongoc::*;
@@ -65,8 +65,8 @@ impl Client {
         assert!(!self.0.is_null());
         let mut err = MongocError::empty();
 
-        let ptr = unsafe {
-            mongoc_client_get_database_names_with_opts(self.0, opts.as_ptr(), err.mut_inner())
+        let mut ptr = unsafe {
+            mongoc_client_get_database_names_with_opts(self.0, opts.as_ptr(), err.as_mut_ptr())
         };
 
         if ptr.is_null() {
@@ -75,17 +75,17 @@ impl Client {
             let mut vec_str = Vec::new();
 
             unsafe {
-                let mut idx = 0;
+                let ptr2 = ptr;
 
-                while !ptr.offset(idx).is_null() && !(*(ptr.offset(idx))).is_null() {
-                    vec_str.push(
-                        CString::from_raw(*(ptr.offset(idx))).into_string().unwrap()
-                    );
+                while !(*ptr).is_null() {
+                    let s = CStr::from_ptr(*ptr).to_string_lossy().to_string();
 
-                    idx += 1;
+                    vec_str.push(s);
+
+                    ptr = ptr.add(1);
                 }
 
-                bson_strfreev(ptr);
+                bson_strfreev(ptr2);
             }
 
             Ok(vec_str)
@@ -105,11 +105,8 @@ impl Client {
 
         Collection::from_ptr(collection)
     }
-}
 
-impl Drop for Client {
-    fn drop(&mut self) {
-        assert!(!self.0.is_null());
+    pub fn destroy(&self) {
         unsafe { mongoc_client_destroy(self.0) }
     }
 }

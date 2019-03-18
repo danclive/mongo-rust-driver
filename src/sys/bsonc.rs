@@ -3,6 +3,7 @@
 #![allow(non_snake_case)]
 
 use std::os::raw::c_char;
+use std::os::raw::c_void;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -24,6 +25,8 @@ extern "C" {
     pub fn bson_value_copy(src: *const bson_value_t, dst: *mut bson_value_t);
     pub fn bson_value_destroy(value: *mut bson_value_t);
     pub fn bson_count_keys(bson: *const bson_t) -> u32;
+    pub fn bson_has_field(bson: *const bson_t, key: *const c_char) -> bool;
+    pub fn bson_free(mem: *mut c_void);
 }
 
 #[repr(C)]
@@ -43,21 +46,21 @@ pub struct bson_oid_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct bson_value_t {
-    pub value_type: bson_type_t,
+    pub value_type: u32,
     pub padding: i32,
-    pub value: _bson_value_t__bindgen_ty_1,
+    pub value: bson_v,
 }
 
 #[test]
 fn name() {
     use std::mem;
-    let a = mem::size_of::<_bson_value_t__bindgen_ty_1>();
+    let a = mem::size_of::<bson_v>();
     assert_eq!(a, 24);
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union _bson_value_t__bindgen_ty_1 {
+pub union bson_v {
     pub v_oid: bson_oid_t,
     pub v_int64: i64,
     pub v_int32: i32,
@@ -65,57 +68,57 @@ pub union _bson_value_t__bindgen_ty_1 {
     pub v_double: f64,
     pub v_bool: bool,
     pub v_datetime: i64,
-    pub v_timestamp: _bson_value_t__bindgen_ty_1__bindgen_ty_1,
-    pub v_utf8: _bson_value_t__bindgen_ty_1__bindgen_ty_2,
-    pub v_doc: _bson_value_t__bindgen_ty_1__bindgen_ty_3,
-    pub v_binary: _bson_value_t__bindgen_ty_1__bindgen_ty_4,
-    pub v_regex: _bson_value_t__bindgen_ty_1__bindgen_ty_5,
-    pub v_dbpointer: _bson_value_t__bindgen_ty_1__bindgen_ty_6,
-    pub v_code: _bson_value_t__bindgen_ty_1__bindgen_ty_7,
-    pub v_codewscope: _bson_value_t__bindgen_ty_1__bindgen_ty_8,
-    pub v_symbol: _bson_value_t__bindgen_ty_1__bindgen_ty_9,
-    pub v_decimal128: bson_decimal128_t,
+    pub v_timestamp: v_timestamp,
+    pub v_utf8: v_utf8,
+    pub v_doc: v_doc,
+    pub v_binary: v_binary,
+    pub v_regex: v_regex,
+    pub v_dbpointer: v_dbpointer,
+    pub v_code: v_code,
+    pub v_codewscope: v_codewscope,
+    pub v_symbol: v_symbol,
+    pub v_decimal128: v_decimal128,
     _bindgen_union_align: [u64; 3usize],
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_1 {
+pub struct v_timestamp {
     pub timestamp: u32,
     pub increment: u32,
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_2 {
+pub struct v_utf8 {
     pub str: *mut ::std::os::raw::c_char,
     pub len: u32,
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_3 {
+pub struct v_doc {
     pub data: *mut u8,
     pub data_len: u32,
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_4 {
+pub struct v_binary {
     pub data: *mut u8,
     pub data_len: u32,
-    pub subtype: bson_subtype_t,
+    pub subtype: u32,
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_5 {
+pub struct v_regex {
     pub regex: *mut ::std::os::raw::c_char,
     pub options: *mut ::std::os::raw::c_char,
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_6 {
+pub struct v_dbpointer {
     pub collection: *mut ::std::os::raw::c_char,
     pub collection_len: u32,
     pub oid: bson_oid_t,
@@ -123,14 +126,14 @@ pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_6 {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_7 {
+pub struct v_code {
     pub code: *mut ::std::os::raw::c_char,
     pub code_len: u32,
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_8 {
+pub struct v_codewscope {
     pub code: *mut ::std::os::raw::c_char,
     pub scope_data: *mut u8,
     pub code_len: u32,
@@ -139,47 +142,45 @@ pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_8 {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _bson_value_t__bindgen_ty_1__bindgen_ty_9 {
+pub struct v_symbol {
     pub symbol: *mut ::std::os::raw::c_char,
     pub len: u32,
 }
 
-pub const bson_type_t_BSON_TYPE_EOD: bson_type_t = 0;
-pub const bson_type_t_BSON_TYPE_DOUBLE: bson_type_t = 1;
-pub const bson_type_t_BSON_TYPE_UTF8: bson_type_t = 2;
-pub const bson_type_t_BSON_TYPE_DOCUMENT: bson_type_t = 3;
-pub const bson_type_t_BSON_TYPE_ARRAY: bson_type_t = 4;
-pub const bson_type_t_BSON_TYPE_BINARY: bson_type_t = 5;
-pub const bson_type_t_BSON_TYPE_UNDEFINED: bson_type_t = 6;
-pub const bson_type_t_BSON_TYPE_OID: bson_type_t = 7;
-pub const bson_type_t_BSON_TYPE_BOOL: bson_type_t = 8;
-pub const bson_type_t_BSON_TYPE_DATE_TIME: bson_type_t = 9;
-pub const bson_type_t_BSON_TYPE_NULL: bson_type_t = 10;
-pub const bson_type_t_BSON_TYPE_REGEX: bson_type_t = 11;
-pub const bson_type_t_BSON_TYPE_DBPOINTER: bson_type_t = 12;
-pub const bson_type_t_BSON_TYPE_CODE: bson_type_t = 13;
-pub const bson_type_t_BSON_TYPE_SYMBOL: bson_type_t = 14;
-pub const bson_type_t_BSON_TYPE_CODEWSCOPE: bson_type_t = 15;
-pub const bson_type_t_BSON_TYPE_INT32: bson_type_t = 16;
-pub const bson_type_t_BSON_TYPE_TIMESTAMP: bson_type_t = 17;
-pub const bson_type_t_BSON_TYPE_INT64: bson_type_t = 18;
-pub const bson_type_t_BSON_TYPE_DECIMAL128: bson_type_t = 19;
-pub const bson_type_t_BSON_TYPE_MAXKEY: bson_type_t = 127;
-pub const bson_type_t_BSON_TYPE_MINKEY: bson_type_t = 255;
-pub type bson_type_t = u32;
+pub const BSON_TYPE_EOD: u32 = 0;
+pub const BSON_TYPE_DOUBLE: u32 = 1;
+pub const BSON_TYPE_UTF8: u32 = 2;
+pub const BSON_TYPE_DOCUMENT: u32 = 3;
+pub const BSON_TYPE_ARRAY: u32 = 4;
+pub const BSON_TYPE_BINARY: u32 = 5;
+pub const BSON_TYPE_UNDEFINED: u32 = 6;
+pub const BSON_TYPE_OID: u32 = 7;
+pub const BSON_TYPE_BOOL: u32 = 8;
+pub const BSON_TYPE_DATE_TIME: u32 = 9;
+pub const BSON_TYPE_NULL: u32 = 10;
+pub const BSON_TYPE_REGEX: u32 = 11;
+pub const BSON_TYPE_DBPOINTER: u32 = 12;
+pub const BSON_TYPE_CODE: u32 = 13;
+pub const BSON_TYPE_SYMBOL: u32 = 14;
+pub const BSON_TYPE_CODEWSCOPE: u32 = 15;
+pub const BSON_TYPE_INT32: u32 = 16;
+pub const BSON_TYPE_TIMESTAMP: u32 = 17;
+pub const BSON_TYPE_INT64: u32 = 18;
+pub const BSON_TYPE_DECIMAL128: u32 = 19;
+pub const BSON_TYPE_MAXKEY: u32 = 127;
+pub const BSON_TYPE_MINKEY: u32 = 255;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct bson_decimal128_t {
+pub struct v_decimal128 {
     pub low: u64,
     pub high: u64,
 }
 
-pub const bson_subtype_t_BSON_SUBTYPE_BINARY: bson_subtype_t = 0;
-pub const bson_subtype_t_BSON_SUBTYPE_FUNCTION: bson_subtype_t = 1;
-pub const bson_subtype_t_BSON_SUBTYPE_BINARY_DEPRECATED: bson_subtype_t = 2;
-pub const bson_subtype_t_BSON_SUBTYPE_UUID_DEPRECATED: bson_subtype_t = 3;
-pub const bson_subtype_t_BSON_SUBTYPE_UUID: bson_subtype_t = 4;
-pub const bson_subtype_t_BSON_SUBTYPE_MD5: bson_subtype_t = 5;
-pub const bson_subtype_t_BSON_SUBTYPE_USER: bson_subtype_t = 128;
-pub type bson_subtype_t = u32;
+pub const BSON_SUBTYPE_BINARY: u32 = 0;
+pub const BSON_SUBTYPE_FUNCTION: u32 = 1;
+pub const BSON_SUBTYPE_BINARY_DEPRECATED: u32 = 2;
+pub const BSON_SUBTYPE_UUID_DEPRECATED: u32 = 3;
+pub const BSON_SUBTYPE_UUID: u32 = 4;
+pub const BSON_SUBTYPE_MD5: u32 = 5;
+pub const BSON_SUBTYPE_USER: u32 = 128;

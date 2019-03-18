@@ -27,7 +27,7 @@ impl Uri {
         let mut err = MongocError::empty();
 
         let uri = unsafe {
-            mongoc_uri_new_with_error(cstring.as_ptr(), err.mut_inner())
+            mongoc_uri_new_with_error(cstring.as_ptr(), err.as_mut_ptr())
         };
 
         if uri.is_null() {

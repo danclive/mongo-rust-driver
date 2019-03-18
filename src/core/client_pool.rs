@@ -1,5 +1,3 @@
-use std::mem;
-
 use crate::sys::mongoc::*;
 use crate::core::uri::Uri;
 use crate::core::client::Client;
@@ -8,6 +6,8 @@ pub struct ClientPool(*mut mongoc_client_pool_t);
 
 impl ClientPool {
     pub fn new(uri: &Uri) -> ClientPool {
+        unsafe { mongoc_init(); }
+
         let pool = unsafe {
             mongoc_client_pool_new(uri.as_ptr())
         };
@@ -61,8 +61,6 @@ impl ClientPool {
         assert!(!self.0.is_null());
         let ptr = client.as_mut_ptr();
 
-        mem::forget(client);
-
         unsafe { mongoc_client_pool_push(self.0, ptr) }
     }
 
@@ -86,6 +84,9 @@ unsafe impl Sync for ClientPool {}
 impl Drop for ClientPool {
     fn drop(&mut self) {
         assert!(!self.0.is_null());
-        unsafe { mongoc_client_pool_destroy(self.0) }
+        unsafe {
+            mongoc_client_pool_destroy(self.0);
+            mongoc_cleanup();
+        }
     }
 }

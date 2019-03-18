@@ -131,6 +131,13 @@ pub const MONGOC_MICRO_VERSION: u32 = 0;
 pub const MONGOC_VERSION_S: &'static [u8; 7usize] = b"1.14.0\0";
 pub const MONGOC_VERSION_HEX: u32 = 17694720;
 
+extern "C" {
+    pub fn mongoc_init();
+}
+extern "C" {
+    pub fn mongoc_cleanup();
+}
+
 // see http://mongoc.org/libmongoc/current/mongoc_bulk_operation_t.html
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -140,10 +147,10 @@ pub struct mongoc_bulk_operation_t {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _mongoc_bulk_write_flags_t {
+pub struct mongoc_bulk_write_flags_t {
     _unused: [u8; 0],
 }
-pub type mongoc_bulk_write_flags_t = _mongoc_bulk_write_flags_t;
+
 extern "C" {
     pub fn mongoc_bulk_operation_destroy(bulk: *mut mongoc_bulk_operation_t);
     pub fn mongoc_bulk_operation_execute(
@@ -263,10 +270,10 @@ extern "C" {
 // see http://mongoc.org/libmongoc/current/mongoc_change_stream_t.html
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _mongoc_change_stream_t {
+pub struct mongoc_change_stream_t {
     _unused: [u8; 0],
 }
-pub type mongoc_change_stream_t = _mongoc_change_stream_t;
+
 extern "C" {
     pub fn mongoc_change_stream_destroy(arg1: *mut mongoc_change_stream_t);
     pub fn mongoc_change_stream_next(
@@ -566,16 +573,17 @@ extern "C" {
     pub fn mongoc_collection_destroy(collection: *mut mongoc_collection_t);
     pub fn mongoc_collection_copy(collection: *mut mongoc_collection_t)
         -> *mut mongoc_collection_t;
-    pub fn mongoc_collection_command(
-        collection: *mut mongoc_collection_t,
-        flags: mongoc_query_flags_t,
-        skip: u32,
-        limit: u32,
-        batch_size: u32,
-        command: *const bson_t,
-        fields: *const bson_t,
-        read_prefs: *const mongoc_read_prefs_t,
-    ) -> *mut mongoc_cursor_t;
+    // Deprecated
+    // pub fn mongoc_collection_command(
+    //     collection: *mut mongoc_collection_t,
+    //     flags: mongoc_query_flags_t,
+    //     skip: u32,
+    //     limit: u32,
+    //     batch_size: u32,
+    //     command: *const bson_t,
+    //     fields: *const bson_t,
+    //     read_prefs: *const mongoc_read_prefs_t,
+    // ) -> *mut mongoc_cursor_t;
     pub fn mongoc_collection_read_command_with_opts(
         collection: *mut mongoc_collection_t,
         command: *const bson_t,
@@ -614,29 +622,32 @@ extern "C" {
         reply: *mut bson_t,
         error: *mut bson_error_t,
     ) -> bool;
-    pub fn mongoc_collection_count(
-        collection: *mut mongoc_collection_t,
-        flags: mongoc_query_flags_t,
-        query: *const bson_t,
-        skip: i64,
-        limit: i64,
-        read_prefs: *const mongoc_read_prefs_t,
-        error: *mut bson_error_t,
-    ) -> i64;
-    pub fn mongoc_collection_count_with_opts(
-        collection: *mut mongoc_collection_t,
-        flags: mongoc_query_flags_t,
-        query: *const bson_t,
-        skip: i64,
-        limit: i64,
-        opts: *const bson_t,
-        read_prefs: *const mongoc_read_prefs_t,
-        error: *mut bson_error_t,
-    ) -> i64;
-    pub fn mongoc_collection_drop(
-        collection: *mut mongoc_collection_t,
-        error: *mut bson_error_t,
-    ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_count(
+    //     collection: *mut mongoc_collection_t,
+    //     flags: mongoc_query_flags_t,
+    //     query: *const bson_t,
+    //     skip: i64,
+    //     limit: i64,
+    //     read_prefs: *const mongoc_read_prefs_t,
+    //     error: *mut bson_error_t,
+    // ) -> i64;
+    // Deprecated
+    // pub fn mongoc_collection_count_with_opts(
+    //     collection: *mut mongoc_collection_t,
+    //     flags: mongoc_query_flags_t,
+    //     query: *const bson_t,
+    //     skip: i64,
+    //     limit: i64,
+    //     opts: *const bson_t,
+    //     read_prefs: *const mongoc_read_prefs_t,
+    //     error: *mut bson_error_t,
+    // ) -> i64;
+    // Deprecated
+    // pub fn mongoc_collection_drop(
+    //     collection: *mut mongoc_collection_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
     pub fn mongoc_collection_drop_with_opts(
         collection: *mut mongoc_collection_t,
         opts: *const bson_t,
@@ -653,12 +664,13 @@ extern "C" {
         opts: *const bson_t,
         error: *mut bson_error_t,
     ) -> bool;
-    pub fn mongoc_collection_create_index(
-        collection: *mut mongoc_collection_t,
-        keys: *const bson_t,
-        opt: *const mongoc_index_opt_t,
-        error: *mut bson_error_t,
-    ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_create_index(
+    //     collection: *mut mongoc_collection_t,
+    //     keys: *const bson_t,
+    //     opt: *const mongoc_index_opt_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
     pub fn mongoc_collection_create_index_with_opts(
         collection: *mut mongoc_collection_t,
         keys: *const bson_t,
@@ -667,43 +679,48 @@ extern "C" {
         reply: *mut bson_t,
         error: *mut bson_error_t,
     ) -> bool;
-    pub fn mongoc_collection_ensure_index(
-        collection: *mut mongoc_collection_t,
-        keys: *const bson_t,
-        opt: *const mongoc_index_opt_t,
-        error: *mut bson_error_t,
-    ) -> bool;
-    pub fn mongoc_collection_find_indexes(
-        collection: *mut mongoc_collection_t,
-        error: *mut bson_error_t,
-    ) -> *mut mongoc_cursor_t;
-    pub fn mongoc_collection_find_indexes_with_opts(
-        collection: *mut mongoc_collection_t,
-        opts: *const bson_t,
-    ) -> *mut mongoc_cursor_t;
-    pub fn mongoc_collection_find(
-        collection: *mut mongoc_collection_t,
-        flags: mongoc_query_flags_t,
-        skip: u32,
-        limit: u32,
-        batch_size: u32,
-        query: *const bson_t,
-        fields: *const bson_t,
-        read_prefs: *const mongoc_read_prefs_t,
-    ) -> *mut mongoc_cursor_t;
+    // Deprecated
+    // pub fn mongoc_collection_ensure_index(
+    //     collection: *mut mongoc_collection_t,
+    //     keys: *const bson_t,
+    //     opt: *const mongoc_index_opt_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_find_indexes(
+    //     collection: *mut mongoc_collection_t,
+    //     error: *mut bson_error_t,
+    // ) -> *mut mongoc_cursor_t;
+    // Deprecated
+    // pub fn mongoc_collection_find_indexes_with_opts(
+    //     collection: *mut mongoc_collection_t,
+    //     opts: *const bson_t,
+    // ) -> *mut mongoc_cursor_t;
+    // Deprecated
+    // pub fn mongoc_collection_find(
+    //     collection: *mut mongoc_collection_t,
+    //     flags: mongoc_query_flags_t,
+    //     skip: u32,
+    //     limit: u32,
+    //     batch_size: u32,
+    //     query: *const bson_t,
+    //     fields: *const bson_t,
+    //     read_prefs: *const mongoc_read_prefs_t,
+    // ) -> *mut mongoc_cursor_t;
     pub fn mongoc_collection_find_with_opts(
         collection: *mut mongoc_collection_t,
         filter: *const bson_t,
         opts: *const bson_t,
         read_prefs: *const mongoc_read_prefs_t,
     ) -> *mut mongoc_cursor_t;
-    pub fn mongoc_collection_insert(
-        collection: *mut mongoc_collection_t,
-        flags: mongoc_insert_flags_t,
-        document: *const bson_t,
-        write_concern: *const mongoc_write_concern_t,
-        error: *mut bson_error_t,
-    ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_insert(
+    //     collection: *mut mongoc_collection_t,
+    //     flags: mongoc_insert_flags_t,
+    //     document: *const bson_t,
+    //     write_concern: *const mongoc_write_concern_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
     pub fn mongoc_collection_insert_one(
         collection: *mut mongoc_collection_t,
         document: *const bson_t,
@@ -719,22 +736,24 @@ extern "C" {
         reply: *mut bson_t,
         error: *mut bson_error_t,
     ) -> bool;
-    pub fn mongoc_collection_insert_bulk(
-        collection: *mut mongoc_collection_t,
-        flags: mongoc_insert_flags_t,
-        documents: *mut *const bson_t,
-        n_documents: u32,
-        write_concern: *const mongoc_write_concern_t,
-        error: *mut bson_error_t,
-    ) -> bool;
-    pub fn mongoc_collection_update(
-        collection: *mut mongoc_collection_t,
-        flags: mongoc_update_flags_t,
-        selector: *const bson_t,
-        update: *const bson_t,
-        write_concern: *const mongoc_write_concern_t,
-        error: *mut bson_error_t,
-    ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_insert_bulk(
+    //     collection: *mut mongoc_collection_t,
+    //     flags: mongoc_insert_flags_t,
+    //     documents: *mut *const bson_t,
+    //     n_documents: u32,
+    //     write_concern: *const mongoc_write_concern_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_update(
+    //     collection: *mut mongoc_collection_t,
+    //     flags: mongoc_update_flags_t,
+    //     selector: *const bson_t,
+    //     update: *const bson_t,
+    //     write_concern: *const mongoc_write_concern_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
     pub fn mongoc_collection_update_one(
         collection: *mut mongoc_collection_t,
         selector: *const bson_t,
@@ -759,19 +778,21 @@ extern "C" {
         reply: *mut bson_t,
         error: *mut bson_error_t,
     ) -> bool;
-    pub fn mongoc_collection_save(
-        collection: *mut mongoc_collection_t,
-        document: *const bson_t,
-        write_concern: *const mongoc_write_concern_t,
-        error: *mut bson_error_t,
-    ) -> bool;
-    pub fn mongoc_collection_remove(
-        collection: *mut mongoc_collection_t,
-        flags: mongoc_remove_flags_t,
-        selector: *const bson_t,
-        write_concern: *const mongoc_write_concern_t,
-        error: *mut bson_error_t,
-    ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_save(
+    //     collection: *mut mongoc_collection_t,
+    //     document: *const bson_t,
+    //     write_concern: *const mongoc_write_concern_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_remove(
+    //     collection: *mut mongoc_collection_t,
+    //     flags: mongoc_remove_flags_t,
+    //     selector: *const bson_t,
+    //     write_concern: *const mongoc_write_concern_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
     pub fn mongoc_collection_delete_one(
         collection: *mut mongoc_collection_t,
         selector: *const bson_t,
@@ -808,29 +829,32 @@ extern "C" {
         reply: *mut bson_t,
         error: *mut bson_error_t,
     ) -> bool;
-    pub fn mongoc_collection_find_and_modify(
-        collection: *mut mongoc_collection_t,
-        query: *const bson_t,
-        sort: *const bson_t,
-        update: *const bson_t,
-        fields: *const bson_t,
-        _remove: bool,
-        upsert: bool,
-        _new: bool,
-        reply: *mut bson_t,
-        error: *mut bson_error_t,
-    ) -> bool;
-    pub fn mongoc_collection_stats(
-        collection: *mut mongoc_collection_t,
-        options: *const bson_t,
-        reply: *mut bson_t,
-        error: *mut bson_error_t,
-    ) -> bool;
-    pub fn mongoc_collection_create_bulk_operation(
-        collection: *mut mongoc_collection_t,
-        ordered: bool,
-        write_concern: *const mongoc_write_concern_t,
-    ) -> *mut mongoc_bulk_operation_t;
+    // Deprecated
+    // pub fn mongoc_collection_find_and_modify(
+    //     collection: *mut mongoc_collection_t,
+    //     query: *const bson_t,
+    //     sort: *const bson_t,
+    //     update: *const bson_t,
+    //     fields: *const bson_t,
+    //     _remove: bool,
+    //     upsert: bool,
+    //     _new: bool,
+    //     reply: *mut bson_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_stats(
+    //     collection: *mut mongoc_collection_t,
+    //     options: *const bson_t,
+    //     reply: *mut bson_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_create_bulk_operation(
+    //     collection: *mut mongoc_collection_t,
+    //     ordered: bool,
+    //     write_concern: *const mongoc_write_concern_t,
+    // ) -> *mut mongoc_bulk_operation_t;
     pub fn mongoc_collection_create_bulk_operation_with_opts(
         collection: *mut mongoc_collection_t,
         opts: *const bson_t,
@@ -865,12 +889,13 @@ extern "C" {
     pub fn mongoc_collection_keys_to_index_string(
         keys: *const bson_t,
     ) -> *mut c_char;
-    pub fn mongoc_collection_validate(
-        collection: *mut mongoc_collection_t,
-        options: *const bson_t,
-        reply: *mut bson_t,
-        error: *mut bson_error_t,
-    ) -> bool;
+    // Deprecated
+    // pub fn mongoc_collection_validate(
+    //     collection: *mut mongoc_collection_t,
+    //     options: *const bson_t,
+    //     reply: *mut bson_t,
+    //     error: *mut bson_error_t,
+    // ) -> bool;
     pub fn mongoc_collection_watch(
         coll: *const mongoc_collection_t,
         pipeline: *const bson_t,
@@ -909,10 +934,11 @@ extern "C" {
     pub fn mongoc_cursor_error_document(
         cursor: *mut mongoc_cursor_t,
         error: *mut bson_error_t,
-        doc: *mut *const bson_t,
+        doc: *mut *const bson_t
     ) -> bool;
     pub fn mongoc_cursor_get_host(cursor: *mut mongoc_cursor_t, host: *mut mongoc_host_list_t);
-    pub fn mongoc_cursor_is_alive(cursor: *const mongoc_cursor_t) -> bool;
+    // Deprecated
+    // pub fn mongoc_cursor_is_alive(cursor: *const mongoc_cursor_t) -> bool;
     pub fn mongoc_cursor_current(cursor: *const mongoc_cursor_t) -> *const bson_t;
     pub fn mongoc_cursor_set_batch_size(cursor: *mut mongoc_cursor_t, batch_size: u32);
     pub fn mongoc_cursor_get_batch_size(cursor: *const mongoc_cursor_t) -> u32;
@@ -923,18 +949,19 @@ extern "C" {
     pub fn mongoc_cursor_get_id(cursor: *const mongoc_cursor_t) -> i64;
     pub fn mongoc_cursor_set_max_await_time_ms(
         cursor: *mut mongoc_cursor_t,
-        max_await_time_ms: u32,
+        max_await_time_ms: u32
     );
     pub fn mongoc_cursor_get_max_await_time_ms(cursor: *const mongoc_cursor_t) -> u32;
-    pub fn mongoc_cursor_new_from_command_reply(
-        client: *mut mongoc_client_t,
-        reply: *mut bson_t,
-        server_id: u32,
-    ) -> *mut mongoc_cursor_t;
+    // Deprecated
+    // pub fn mongoc_cursor_new_from_command_reply(
+    //     client: *mut mongoc_client_t,
+    //     reply: *mut bson_t,
+    //     server_id: u32
+    // ) -> *mut mongoc_cursor_t;
     pub fn mongoc_cursor_new_from_command_reply_with_opts(
         client: *mut mongoc_client_t,
         reply: *mut bson_t,
-        opts: *const bson_t,
+        opts: *const bson_t
     ) -> *mut mongoc_cursor_t;
 }
 
@@ -968,16 +995,17 @@ extern "C" {
     ) -> bool;
     pub fn mongoc_database_destroy(database: *mut mongoc_database_t);
     pub fn mongoc_database_copy(database: *mut mongoc_database_t) -> *mut mongoc_database_t;
-    pub fn mongoc_database_command(
-        database: *mut mongoc_database_t,
-        flags: mongoc_query_flags_t,
-        skip: u32,
-        limit: u32,
-        batch_size: u32,
-        command: *const bson_t,
-        fields: *const bson_t,
-        read_prefs: *const mongoc_read_prefs_t,
-    ) -> *mut mongoc_cursor_t;
+    // Deprecated
+    // pub fn mongoc_database_command(
+    //     database: *mut mongoc_database_t,
+    //     flags: mongoc_query_flags_t,
+    //     skip: u32,
+    //     limit: u32,
+    //     batch_size: u32,
+    //     command: *const bson_t,
+    //     fields: *const bson_t,
+    //     read_prefs: *const mongoc_read_prefs_t,
+    // ) -> *mut mongoc_cursor_t;
     pub fn mongoc_database_read_command_with_opts(
         database: *mut mongoc_database_t,
         command: *const bson_t,
@@ -1016,8 +1044,8 @@ extern "C" {
         reply: *mut bson_t,
         error: *mut bson_error_t,
     ) -> bool;
-    pub fn mongoc_database_drop(database: *mut mongoc_database_t, error: *mut bson_error_t)
-        -> bool;
+    // Deprecated
+    // pub fn mongoc_database_drop(database: *mut mongoc_database_t, error: *mut bson_error_t)-> bool;
     pub fn mongoc_database_drop_with_opts(
         database: *mut mongoc_database_t,
         opts: *const bson_t,
@@ -1055,11 +1083,12 @@ extern "C" {
         database: *mut mongoc_database_t,
         read_concern: *const mongoc_read_concern_t,
     );
-    pub fn mongoc_database_find_collections(
-        database: *mut mongoc_database_t,
-        filter: *const bson_t,
-        error: *mut bson_error_t,
-    ) -> *mut mongoc_cursor_t;
+    // find_collections
+    // pub fn mongoc_database_find_collections(
+    //     database: *mut mongoc_database_t,
+    //     filter: *const bson_t,
+    //     error: *mut bson_error_t,
+    // ) -> *mut mongoc_cursor_t;
     pub fn mongoc_database_find_collections_with_opts(
         database: *mut mongoc_database_t,
         opts: *const bson_t,
@@ -1091,14 +1120,10 @@ pub struct mongoc_find_and_modify_opts_t {
     _unused: [u8; 0],
 }
 
-pub const mongoc_find_and_modify_flags_t_MONGOC_FIND_AND_MODIFY_NONE:
-    mongoc_find_and_modify_flags_t = 0;
-pub const mongoc_find_and_modify_flags_t_MONGOC_FIND_AND_MODIFY_REMOVE:
-    mongoc_find_and_modify_flags_t = 1;
-pub const mongoc_find_and_modify_flags_t_MONGOC_FIND_AND_MODIFY_UPSERT:
-    mongoc_find_and_modify_flags_t = 2;
-pub const mongoc_find_and_modify_flags_t_MONGOC_FIND_AND_MODIFY_RETURN_NEW:
-    mongoc_find_and_modify_flags_t = 4;
+pub const MONGOC_FIND_AND_MODIFY_NONE: u32 = 0;
+pub const MONGOC_FIND_AND_MODIFY_REMOVE: u32 = 1;
+pub const MONGOC_FIND_AND_MODIFY_UPSERT: u32 = 2;
+pub const MONGOC_FIND_AND_MODIFY_RETURN_NEW: u32 = 4;
 pub type mongoc_find_and_modify_flags_t = u32;
 
 extern "C" {
@@ -1162,10 +1187,10 @@ extern "C" {
 // see http://mongoc.org/libmongoc/current/mongoc_gridfs_file_list_t.html
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _mongoc_gridfs_file_list_t {
+pub struct mongoc_gridfs_file_list_t {
     _unused: [u8; 0],
 }
-pub type mongoc_gridfs_file_list_t = _mongoc_gridfs_file_list_t;
+
 extern "C" {
     pub fn mongoc_gridfs_file_list_next(
         list: *mut mongoc_gridfs_file_list_t,
@@ -1193,10 +1218,9 @@ pub struct _mongoc_gridfs_file_opt_t {
 // see http://mongoc.org/libmongoc/current/mongoc_gridfs_file_t.html
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _mongoc_gridfs_file_t {
+pub struct mongoc_gridfs_file_t {
     _unused: [u8; 0],
 }
-pub type mongoc_gridfs_file_t = _mongoc_gridfs_file_t;
 
 extern "C" {
     pub fn mongoc_gridfs_file_get_md5(
@@ -1264,17 +1288,13 @@ extern "C" {
     ) -> bool;
 }
 
-extern "C" {
-    pub fn mongoc_stream_gridfs_new(file: *mut mongoc_gridfs_file_t) -> *mut mongoc_stream_t;
-}
-
 // see http://mongoc.org/libmongoc/current/mongoc_gridfs_bucket_t.html
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _mongoc_gridfs_bucket_t {
+pub struct mongoc_gridfs_bucket_t {
     _unused: [u8; 0],
 }
-pub type mongoc_gridfs_bucket_t = _mongoc_gridfs_bucket_t;
+
 extern "C" {
     pub fn mongoc_gridfs_bucket_new(
         db: *mut mongoc_database_t,
@@ -1344,10 +1364,10 @@ extern "C" {
 // see http://mongoc.org/libmongoc/current/mongoc_gridfs_t.html
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _mongoc_gridfs_t {
+pub struct mongoc_gridfs_t {
     _unused: [u8; 0],
 }
-pub type mongoc_gridfs_t = _mongoc_gridfs_t;
+
 extern "C" {
     pub fn mongoc_gridfs_create_file_from_stream(
         gridfs: *mut mongoc_gridfs_t,
@@ -1447,10 +1467,8 @@ pub struct mongoc_index_opt_storage_t {
 }
 
 // see http://mongoc.org/libmongoc/current/mongoc_index_opt_wt_t.html
-pub const mongoc_index_storage_opt_type_t_MONGOC_INDEX_STORAGE_OPT_MMAPV1:
-    mongoc_index_storage_opt_type_t = 0;
-pub const mongoc_index_storage_opt_type_t_MONGOC_INDEX_STORAGE_OPT_WIREDTIGER:
-    mongoc_index_storage_opt_type_t = 1;
+pub const MONGOC_INDEX_STORAGE_OPT_MMAPV1: u32 = 0;
+pub const MONGOC_INDEX_STORAGE_OPT_WIREDTIGER: u32 = 1;
 pub type mongoc_index_storage_opt_type_t = u32;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1461,33 +1479,29 @@ pub struct mongoc_index_opt_wt_t {
 }
 
 // see http://mongoc.org/libmongoc/current/mongoc_insert_flags_t.html
-pub const mongoc_insert_flags_t_MONGOC_INSERT_NONE: mongoc_insert_flags_t = 0;
-pub const mongoc_insert_flags_t_MONGOC_INSERT_CONTINUE_ON_ERROR: mongoc_insert_flags_t = 1;
-pub type mongoc_insert_flags_t = u32;
+// pub const mongoc_insert_flags_t_MONGOC_INSERT_NONE: mongoc_insert_flags_t = 0;
+// pub const mongoc_insert_flags_t_MONGOC_INSERT_CONTINUE_ON_ERROR: mongoc_insert_flags_t = 1;
+// pub type mongoc_insert_flags_t = u32;
 
 // see http://mongoc.org/libmongoc/current/mongoc_query_flags_t.html
-pub const mongoc_query_flags_t_MONGOC_QUERY_NONE: mongoc_query_flags_t = 0;
-pub const mongoc_query_flags_t_MONGOC_QUERY_TAILABLE_CURSOR: mongoc_query_flags_t = 2;
-pub const mongoc_query_flags_t_MONGOC_QUERY_SLAVE_OK: mongoc_query_flags_t = 4;
-pub const mongoc_query_flags_t_MONGOC_QUERY_OPLOG_REPLAY: mongoc_query_flags_t = 8;
-pub const mongoc_query_flags_t_MONGOC_QUERY_NO_CURSOR_TIMEOUT: mongoc_query_flags_t = 16;
-pub const mongoc_query_flags_t_MONGOC_QUERY_AWAIT_DATA: mongoc_query_flags_t = 32;
-pub const mongoc_query_flags_t_MONGOC_QUERY_EXHAUST: mongoc_query_flags_t = 64;
-pub const mongoc_query_flags_t_MONGOC_QUERY_PARTIAL: mongoc_query_flags_t = 128;
+pub const MONGOC_QUERY_NONE: u32 = 0;
+pub const MONGOC_QUERY_TAILABLE_CURSOR: u32 = 2;
+pub const MONGOC_QUERY_SLAVE_OK: u32 = 4;
+pub const MONGOC_QUERY_OPLOG_REPLAY: u32 = 8;
+pub const MONGOC_QUERY_NO_CURSOR_TIMEOUT: u32 = 16;
+pub const MONGOC_QUERY_AWAIT_DATA: u32 = 32;
+pub const MONGOC_QUERY_EXHAUST: u32 = 64;
+pub const MONGOC_QUERY_PARTIAL: u32 = 128;
 pub type mongoc_query_flags_t = u32;
 
 // see http://mongoc.org/libmongoc/current/mongoc_rand.html
 extern "C" {
     pub fn mongoc_rand_seed(buf: *const c_void, num: c_int);
-}
-extern "C" {
     pub fn mongoc_rand_add(
         buf: *const c_void,
         num: c_int,
         entropy: f64,
     );
-}
-extern "C" {
     pub fn mongoc_rand_status() -> c_int;
 }
 
@@ -1523,14 +1537,6 @@ extern "C" {
     ) -> bool;
     pub fn mongoc_read_concern_is_default(read_concern: *const mongoc_read_concern_t) -> bool;
 }
-
-// see http://mongoc.org/libmongoc/current/mongoc_read_mode_t.html
-pub const mongoc_read_mode_t_MONGOC_READ_PRIMARY: mongoc_read_mode_t = 1;
-pub const mongoc_read_mode_t_MONGOC_READ_SECONDARY: mongoc_read_mode_t = 2;
-pub const mongoc_read_mode_t_MONGOC_READ_PRIMARY_PREFERRED: mongoc_read_mode_t = 5;
-pub const mongoc_read_mode_t_MONGOC_READ_SECONDARY_PREFERRED: mongoc_read_mode_t = 6;
-pub const mongoc_read_mode_t_MONGOC_READ_NEAREST: mongoc_read_mode_t = 10;
-pub type mongoc_read_mode_t = u32;
 
 // see http://mongoc.org/libmongoc/current/mongoc_read_prefs_t.html
 #[repr(C)]
@@ -1569,26 +1575,26 @@ extern "C" {
     pub fn mongoc_read_prefs_is_valid(read_prefs: *const mongoc_read_prefs_t) -> bool;
 }
 
-// see http://mongoc.org/libmongoc/current/mongoc_remove_flags_t.html
-pub const mongoc_remove_flags_t_MONGOC_REMOVE_NONE: mongoc_remove_flags_t = 0;
-pub const mongoc_remove_flags_t_MONGOC_REMOVE_SINGLE_REMOVE: mongoc_remove_flags_t = 1;
-pub type mongoc_remove_flags_t = u32;
+// // see http://mongoc.org/libmongoc/current/mongoc_remove_flags_t.html
+// pub const MONGOC_REMOVE_NONE: u32 = 0;
+// pub const MONGOC_REMOVE_SINGLE_REMOVE: u32 = 1;
+// pub type mongoc_remove_flags_t = u32;
 
 // see http://mongoc.org/libmongoc/current/mongoc_reply_flags_t.html
-pub const mongoc_reply_flags_t_MONGOC_REPLY_NONE: mongoc_reply_flags_t = 0;
-pub const mongoc_reply_flags_t_MONGOC_REPLY_CURSOR_NOT_FOUND: mongoc_reply_flags_t = 1;
-pub const mongoc_reply_flags_t_MONGOC_REPLY_QUERY_FAILURE: mongoc_reply_flags_t = 2;
-pub const mongoc_reply_flags_t_MONGOC_REPLY_SHARD_CONFIG_STALE: mongoc_reply_flags_t = 4;
-pub const mongoc_reply_flags_t_MONGOC_REPLY_AWAIT_CAPABLE: mongoc_reply_flags_t = 8;
+pub const MONGOC_REPLY_NONE: u32 = 0;
+pub const MONGOC_REPLY_CURSOR_NOT_FOUND: u32 = 1;
+pub const MONGOC_REPLY_QUERY_FAILURE: u32 = 2;
+pub const MONGOC_REPLY_SHARD_CONFIG_STALE: u32 = 4;
+pub const MONGOC_REPLY_AWAIT_CAPABLE: u32 = 8;
 pub type mongoc_reply_flags_t = u32;
 
 // see http://mongoc.org/libmongoc/current/mongoc_server_description_t.html
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _mongoc_server_description_t {
+pub struct mongoc_server_description_t {
     _unused: [u8; 0],
 }
-pub type mongoc_server_description_t = _mongoc_server_description_t;
+
 extern "C" {
     pub fn mongoc_server_description_destroy(description: *mut mongoc_server_description_t);
     pub fn mongoc_server_description_new_copy(
@@ -1643,10 +1649,9 @@ extern "C" {
 }
 
 // see http://mongoc.org/libmongoc/current/mongoc_ssl_opt_t.html
-pub type mongoc_ssl_opt_t = _mongoc_ssl_opt_t;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _mongoc_ssl_opt_t {
+pub struct mongoc_ssl_opt_t {
     pub pem_file: *const c_char,
     pub pem_pwd: *const c_char,
     pub ca_file: *const c_char,
@@ -1659,6 +1664,24 @@ pub struct _mongoc_ssl_opt_t {
 
 extern "C" {
     pub fn mongoc_ssl_opt_get_default() -> *const mongoc_ssl_opt_t;
+}
+
+// see http://mongoc.org/libmongoc/current/mongoc_stream_file_t.html#
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _mongoc_stream_file_t {
+    _unused: [u8; 0],
+}
+pub type mongoc_stream_file_t = _mongoc_stream_file_t;
+extern "C" {
+    pub fn mongoc_stream_file_new(fd: c_int) -> *mut mongoc_stream_t;
+    pub fn mongoc_stream_file_new_for_path(
+        path: *const c_char,
+        flags: c_int,
+        mode: c_int,
+    ) -> *mut mongoc_stream_t;
+    pub fn mongoc_stream_file_get_fd(stream: *mut mongoc_stream_file_t) -> c_int;
+    pub fn mongoc_stream_gridfs_new(file: *mut mongoc_gridfs_file_t) -> *mut mongoc_stream_t;
 }
 
 // see http://mongoc.org/libmongoc/current/mongoc_stream_socket_t.html
@@ -1678,8 +1701,6 @@ pub type mongoc_socklen_t = c_uint;
 
 extern "C" {
     pub fn mongoc_stream_socket_new(socket: *mut mongoc_socket_t) -> *mut mongoc_stream_t;
-}
-extern "C" {
     pub fn mongoc_stream_socket_get_socket(
         stream: *mut mongoc_stream_socket_t,
     ) -> *mut mongoc_socket_t;
@@ -1700,9 +1721,7 @@ pub struct mongoc_stream_t {
     pub type_: c_int,
     pub destroy: Option<unsafe extern "C" fn(stream: *mut mongoc_stream_t)>,
     pub close: Option<unsafe extern "C" fn(stream: *mut mongoc_stream_t) -> c_int>,
-    pub flush: Option<
-        unsafe extern "C" fn(stream: *mut mongoc_stream_t) -> c_int,
-    >,
+    pub flush: Option<unsafe extern "C" fn(stream: *mut mongoc_stream_t) -> c_int>,
     pub writev: Option<
         unsafe extern "C" fn(
             stream: *mut mongoc_stream_t,
@@ -1747,6 +1766,10 @@ pub struct mongoc_stream_t {
 }
 
 extern "C" {
+    pub fn mongoc_stream_buffered_new(
+        base_stream: *mut mongoc_stream_t,
+        buffer_size: usize,
+    ) -> *mut mongoc_stream_t;
     pub fn mongoc_stream_get_base_stream(stream: *mut mongoc_stream_t) -> *mut mongoc_stream_t;
     pub fn mongoc_stream_get_tls_stream(stream: *mut mongoc_stream_t) -> *mut mongoc_stream_t;
     pub fn mongoc_stream_close(stream: *mut mongoc_stream_t) -> c_int;
@@ -1838,10 +1861,10 @@ extern "C" {
 // see http://mongoc.org/libmongoc/current/mongoc_topology_description_t.html
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct _mongoc_topology_description_t {
+pub struct mongoc_topology_description_t {
     _unused: [u8; 0],
 }
-pub type mongoc_topology_description_t = _mongoc_topology_description_t;
+
 extern "C" {
     pub fn mongoc_topology_description_has_readable_server(
         td: *mut mongoc_topology_description_t,
@@ -1895,11 +1918,11 @@ extern "C" {
     ) -> *const mongoc_read_prefs_t;
 }
 
-// see http://mongoc.org/libmongoc/current/mongoc_update_flags_t.html
-pub const mongoc_update_flags_t_MONGOC_UPDATE_NONE: mongoc_update_flags_t = 0;
-pub const mongoc_update_flags_t_MONGOC_UPDATE_UPSERT: mongoc_update_flags_t = 1;
-pub const mongoc_update_flags_t_MONGOC_UPDATE_MULTI_UPDATE: mongoc_update_flags_t = 2;
-pub type mongoc_update_flags_t = u32;
+// // see http://mongoc.org/libmongoc/current/mongoc_update_flags_t.html
+// pub const MONGOC_UPDATE_NONE: u32 = 0;
+// pub const MONGOC_UPDATE_UPSERT: u32 = 1;
+// pub const MONGOC_UPDATE_MULTI_UPDATE: u32 = 2;
+// pub type mongoc_update_flags_t = u32;
 
 // see: http://mongoc.org/libmongoc/current/mongoc_uri_t.html
 #[repr(C)]

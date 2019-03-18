@@ -100,7 +100,11 @@ impl MongocError {
         cstr.to_string_lossy().to_string()
     }
 
-    pub fn mut_inner(&mut self) -> &mut bsonc::bson_error_t {
+    pub fn as_ptr(&self) -> *const bsonc::bson_error_t {
+        &self.0
+    }
+
+    pub fn as_mut_ptr(&mut self) -> &mut bsonc::bson_error_t {
         &mut self.0
     }
 }
