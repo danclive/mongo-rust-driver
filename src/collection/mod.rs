@@ -1,4 +1,4 @@
-use bsonrs::Document;
+use bsonrs::{Document, Value};
 
 use crate::core::bsonc::Bsonc;
 use crate::core::collection::Collection as CoreCollection;
@@ -6,8 +6,12 @@ use crate::db::DB;
 use crate::client::Client;
 use crate::read_preference::ReadPreference;
 use crate::cursor::Cursor;
-use crate::find_and_modify::FindAndModifyOpts;
 use crate::error::Result;
+
+use options::FindOptions;
+use options::FindAndModifyOpts;
+
+pub mod options;
 
 pub struct Collection {
     pub db: DB,
@@ -81,17 +85,34 @@ impl Collection {
     pub fn find(
         &self,
         filter: Document,
-        opts: Option<Document>,
+        opts: Option<FindOptions>,
         read_prefs: Option<ReadPreference>
     ) -> Result<Cursor> {
         let client = self.acquire_client();
         let collection = self.get_core_collection(&client);
         let filter = Bsonc::from_doc(&filter)?;
-        let opts = Bsonc::from_doc(&opts.unwrap_or_default())?;
+        let opts = Bsonc::from_doc(&opts.map(|o| o.into()).unwrap_or_default())?;
 
         let core_cursor = collection.find_with_opts(&filter, &opts, read_prefs);
 
         Ok(Cursor::new(core_cursor, client))
+    }
+
+    pub fn find_one(
+        &self,
+        _filter: Document,
+        _opts: Option<FindOptions>,
+        _read_prefs: Option<ReadPreference>
+    ) -> Result<Document> {
+        unimplemented!()
+    }
+
+    pub fn find_by_id(
+        _id: impl Into<Value>,
+        _opts: Option<FindOptions>,
+        _read_prefs: Option<ReadPreference>
+    ) -> Result<Document> {
+        unimplemented!()
     }
 
     pub fn find_and_modify(

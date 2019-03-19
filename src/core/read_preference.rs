@@ -24,10 +24,12 @@ impl ReadPreference {
     }
 
     pub fn as_ptr(&self) -> *const mongoc_read_prefs_t {
+        assert!(!self.0.is_null());
         self.0
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut mongoc_read_prefs_t {
+        assert!(!self.0.is_null());
         self.0
     }
 
@@ -38,12 +40,14 @@ impl ReadPreference {
 
 impl Drop for ReadPreference {
     fn drop(&mut self) {
+        assert!(!self.0.is_null());
         unsafe { mongoc_read_prefs_destroy(self.0) }
     }
 }
 
 impl Clone for ReadPreference {
     fn clone(&self) -> ReadPreference {
+        assert!(!self.0.is_null());
         unsafe { ReadPreference::from_ptr(mongoc_read_prefs_copy(self.0)) }
     }
 }

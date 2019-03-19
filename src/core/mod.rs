@@ -8,6 +8,8 @@ pub mod database;
 pub mod collection;
 pub mod cursor;
 pub mod change_stream;
+pub mod session;
+pub mod client_session;
 pub mod read_preference;
 pub mod write_concern;
 pub mod find_and_modify;

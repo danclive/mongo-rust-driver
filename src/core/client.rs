@@ -1,10 +1,13 @@
 use std::ffi::{CStr, CString};
+use std::ptr;
 
 use crate::sys::bsonc::*;
 use crate::sys::mongoc::*;
 use crate::core::uri::Uri;
 use crate::core::database::Database;
 use crate::core::collection::Collection;
+use crate::core::session::Session;
+use crate::core::client_session::ClientSession;
 use crate::core::bsonc::Bsonc;
 use crate::core::error::MongocError;
 use crate::error::Result;
@@ -104,6 +107,25 @@ impl Client {
         assert!(!collection.is_null());
 
         Collection::from_ptr(collection)
+    }
+
+    pub fn start_session(&self, session: Option<&Session>) -> Result<ClientSession> {
+        let session = session.map(|s| s.as_ptr()).unwrap_or_else(ptr::null);
+        let mut err = MongocError::empty();
+
+        let client_session = unsafe {
+            mongoc_client_start_session(
+                self.0,
+                session,
+                err.as_mut_ptr()
+            )
+        };
+
+        if client_session.is_null() {
+            return Err(err.into())
+        }
+
+        Ok(ClientSession::from_ptr(client_session))
     }
 
     pub fn destroy(&self) {
