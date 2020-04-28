@@ -1,14 +1,15 @@
 [package]
-authors = ["Saghm Rossi <saghmrossi@gmail.com>", "Patrick Freed <patrick.freed@mongodb.com>"]
-description = "The official MongoDB driver for Rust (currently in alpha)"
-edition = "2018"
-documentation = "https://docs.rs/mongodb"
-keywords = ["mongo", "mongodb", "database", "bson", "nosql"]
-repository = "https://github.com/mongodb/mongo-rust-driver"
-license = "Apache-2.0"
-readme = "README.md"
-name = "mongodb"
-version = "0.9.1"
+name            = "mongors"
+version         = "0.3.0"
+license         = "MIT"
+authors         = ["danc <dangcheng@hotmail.com>"]
+description     = "Rust driver for MongoDB"
+keywords        = ["mongo", "mongodb", "mongodb_driver", "database", "nosql"]
+documentation   = "https://docs.rs/mongors"
+homepage        = "https://github.com/danc/mongo-rust-driver"
+repository      = "https://github.com/danc/mongo-rust-driver"
+readme          = "README.md"
+edition         = "2018"
 
 [dependencies]
 base64 = "0.11.0"
