@@ -28,7 +28,7 @@ impl ObjectId {
     /// # Examples
     ///
     /// ```
-    /// use bsonrs::object_id::ObjectId;
+    /// use mongors::bson::oid::ObjectId;
     ///
     /// let id = ObjectId::new();
     ///
@@ -68,7 +68,7 @@ impl ObjectId {
     /// # Examples
     ///
     /// ```
-    /// use bsonrs::object_id::ObjectId;
+    /// use mongors::bson::oid::ObjectId;
     ///
     /// let id = ObjectId::with_bytes([90, 167, 114, 110, 99, 55, 51, 218, 65, 162, 186, 71]);
     ///
@@ -84,7 +84,7 @@ impl ObjectId {
     /// # Examples
     ///
     /// ```
-    /// use bsonrs::object_id::ObjectId;
+    /// use mongors::bson::oid::ObjectId;
     ///
     /// let id = ObjectId::with_string("5932a005b4b4b4ac168cd9e4").unwrap();
     ///

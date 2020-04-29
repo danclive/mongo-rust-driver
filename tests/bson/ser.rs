@@ -1,7 +1,7 @@
 use assert_matches::assert_matches;
 #[cfg(feature = "decimal128")]
-use bson::decimal128::Decimal128;
-use bson::{from_bson, oid::ObjectId, to_bson, Bson, EncoderError, EncoderResult};
+use mongors::bson::decimal128::Decimal128;
+use mongors::bson::{from_bson, oid::ObjectId, to_bson, Bson, EncoderError, EncoderResult};
 use std::{collections::BTreeMap, u16, u32, u64, u8};
 
 #[test]

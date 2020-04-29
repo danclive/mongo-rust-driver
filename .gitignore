@@ -1,6 +1,10 @@
-target
-Cargo.lock
-.vscode
-.idea
-*~
 *.swp
+*.tmp
+*.o
+*~
+/target/
+**/*.rs.bk
+Cargo.lock
+.idea
+*.iml
+.vscode

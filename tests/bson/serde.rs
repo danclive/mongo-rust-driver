@@ -1,8 +1,8 @@
 #![allow(clippy::blacklisted_name)]
 
-use bson::{bson, doc, spec::BinarySubtype, Binary, Bson, Decoder, Encoder};
 use serde::{Deserialize, Serialize};
-use serde_derive::{Deserialize, Serialize};
+use mongors::bson::{spec::BinarySubtype, Binary, Bson, Decoder, Encoder};
+use mongors::{bson, doc};
 
 use std::collections::BTreeMap;
 

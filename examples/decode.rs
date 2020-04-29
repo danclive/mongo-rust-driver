@@ -1,4 +1,4 @@
-use bson;
+use mongors::bson;
 
 use std::fs::File;
 

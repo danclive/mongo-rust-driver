@@ -1,6 +1,8 @@
-use bson::{doc, oid::ObjectId, spec::BinarySubtype, Binary, Bson, Regex, TimeStamp};
 use chrono::offset::Utc;
 use hex;
+
+use mongors::bson::{oid::ObjectId, spec::BinarySubtype, Binary, Bson, Regex, TimeStamp};
+use mongors::doc;
 
 #[test]
 fn standard_format() {

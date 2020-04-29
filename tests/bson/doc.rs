@@ -1,7 +1,6 @@
 #[cfg(feature = "decimal128")]
-use bson::decimal128::Decimal128;
-use bson::{
-    doc,
+use mongors::bson::decimal128::Decimal128;
+use mongors::bson::{
     oid::ObjectId,
     spec::BinarySubtype,
     Binary,
@@ -10,6 +9,7 @@ use bson::{
     TimeStamp,
     ValueAccessError,
 };
+use mongors::doc;
 use chrono::Utc;
 
 #[test]

@@ -1,4 +1,4 @@
-use bson::oid::ObjectId;
+use mongors::bson::oid::ObjectId;
 use hex;
 
 #[test]

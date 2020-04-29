@@ -1,5 +1,6 @@
-use bson::{
-    doc,
+use serde_json::{json, Value};
+
+use mongors::bson::{
     oid::ObjectId,
     spec::BinarySubtype,
     Binary,
@@ -8,7 +9,7 @@ use bson::{
     JavaScriptCodeWithScope,
     Regex,
 };
-use serde_json::{json, Value};
+use mongors::doc;
 
 #[test]
 fn to_json() {

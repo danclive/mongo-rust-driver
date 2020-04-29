@@ -7,7 +7,7 @@
 //! ## Basic usage
 //!
 //! ```rust
-//! use bson::{decode_document, encode_document, Bson, Document};
+//! use mongors::bson::{decode_document, encode_document, Bson, Document};
 //! use std::io::Cursor;
 //!
 //! let mut doc = Document::new();
@@ -233,7 +233,7 @@ impl<T: Into<Bson>> ::std::iter::FromIterator<T> for Bson {
     ///
     /// ```
     /// use std::iter::FromIterator;
-    /// use bson::Bson;
+    /// use mongors::bson::Bson;
     ///
     /// let x: Bson = Bson::from_iter(vec!["lorem", "ipsum", "dolor"]);
     /// // or
@@ -735,6 +735,10 @@ pub struct TimeStamp {
 }
 
 impl TimeStamp {
+    pub fn new(val: i64) -> Self {
+        TimeStamp::from_le_i64(val)
+    }
+
     pub(crate) fn to_le_i64(self) -> i64 {
         let upper = (self.time.to_le() as u64) << 32;
         let lower = self.increment.to_le() as u64;
@@ -810,11 +814,29 @@ pub struct Regex {
     pub options: String,
 }
 
+impl Regex {
+    pub fn new(pattern: String, options: String) -> Regex {
+        Regex {
+            pattern,
+            options
+        }
+    }
+}
+
 /// Represents a BSON code with scope value.
 #[derive(Debug, Clone, PartialEq)]
 pub struct JavaScriptCodeWithScope {
     pub code: String,
     pub scope: Document,
+}
+
+impl JavaScriptCodeWithScope {
+    pub fn new(code: String, scope: Document) -> JavaScriptCodeWithScope {
+        JavaScriptCodeWithScope {
+            code,
+            scope
+        }
+    }
 }
 
 /// Represents a BSON binary value.
@@ -825,4 +847,13 @@ pub struct Binary {
 
     /// The binary bytes.
     pub bytes: Vec<u8>,
+}
+
+impl Binary {
+    pub fn new(subtype: BinarySubtype, bytes: Vec<u8>) -> Binary {
+        Binary {
+            subtype,
+            bytes
+        }
+    }
 }

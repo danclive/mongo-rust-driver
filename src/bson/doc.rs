@@ -602,8 +602,8 @@ impl Document {
         self.inner.entry(k)
     }
 
-    pub fn extend(&mut self, iter: impl Into<Document>) {
-        self.inner.extend(iter.into());
+    pub fn extend<I: IntoIterator<Item=(String, Bson)>>(&mut self, iter: I) {
+        self.inner.extend(iter);
     }
 
     /// Get a key-value pair by index

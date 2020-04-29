@@ -1,9 +1,12 @@
+use byteorder::{LittleEndian, WriteBytesExt};
+use chrono::{offset::TimeZone, Utc};
+use std::io::{Cursor, Write};
+
 #[cfg(feature = "decimal128")]
-use bson::decimal128::Decimal128;
-use bson::{
+use mongors::bson::decimal128::Decimal128;
+use mongors::bson::{
     decode_document,
     decode_document_utf8_lossy,
-    doc,
     encode_document,
     oid::ObjectId,
     spec::BinarySubtype,
@@ -13,9 +16,7 @@ use bson::{
     Regex,
     TimeStamp,
 };
-use byteorder::{LittleEndian, WriteBytesExt};
-use chrono::{offset::TimeZone, Utc};
-use std::io::{Cursor, Write};
+use mongors::doc;
 
 #[test]
 fn test_encode_decode_floating_point() {

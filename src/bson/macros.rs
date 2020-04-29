@@ -1,9 +1,9 @@
 // BSON macro based on the serde_json json! implementation.
 
-/// Construct a bson::BSON value from a literal.
+/// Construct a mongors::bson::BSON value from a literal.
 ///
 /// ```rust
-/// # use bson::bson;
+/// # use mongors::bson;
 /// #
 /// # fn main() {
 /// let value = bson!({
@@ -219,10 +219,10 @@ macro_rules! bson {
     };
 }
 
-/// Construct a bson::Document value.
+/// Construct a mongors::bson::Document value.
 ///
 /// ```rust
-/// # use bson::doc;
+/// # use mongors::doc;
 /// #
 /// # fn main() {
 /// let value = doc! {
