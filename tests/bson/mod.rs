@@ -2,5 +2,6 @@ mod bson;
 mod encoder_decoder;
 mod macros;
 mod oid;
-mod ordered;
+mod doc;
 mod ser;
+mod serde;

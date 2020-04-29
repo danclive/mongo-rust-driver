@@ -13,9 +13,9 @@ use serde::ser::{
 };
 
 #[cfg(feature = "decimal128")]
-use crate::decimal128::Decimal128;
-use crate::{
-    bson::{Array, Binary, Bson, Document, JavaScriptCodeWithScope, Regex, TimeStamp, UtcDateTime},
+use crate::bson::decimal128::Decimal128;
+use crate::bson::{
+    Array, Binary, Bson, Document, JavaScriptCodeWithScope, Regex, TimeStamp, UtcDateTime,
     oid::ObjectId,
     spec::BinarySubtype,
 };

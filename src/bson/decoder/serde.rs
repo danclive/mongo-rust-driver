@@ -16,11 +16,11 @@ use serde::de::{
 
 use super::error::{DecoderError, DecoderResult};
 #[cfg(feature = "decimal128")]
-use crate::decimal128::Decimal128;
-use crate::{
-    bson::{Binary, Bson, JavaScriptCodeWithScope, Regex, TimeStamp, UtcDateTime},
+use crate::bson::decimal128::Decimal128;
+use crate::bson::{
+    Binary, Bson, JavaScriptCodeWithScope, Regex, TimeStamp, UtcDateTime,
     oid::ObjectId,
-    ordered::{OrderedDocument, OrderedDocumentIntoIterator, OrderedDocumentVisitor},
+    doc::{Document, DocumentVisitor, IntoIter},
     spec::BinarySubtype,
 };
 
@@ -42,7 +42,7 @@ impl<'de> Deserialize<'de> for ObjectId {
     }
 }
 
-impl<'de> Deserialize<'de> for OrderedDocument {
+impl<'de> Deserialize<'de> for Document {
     /// Deserialize this value given this `Deserializer`.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -215,8 +215,8 @@ impl<'de> Visitor<'de> for BsonVisitor {
     where
         V: MapAccess<'de>,
     {
-        let values = OrderedDocumentVisitor::new().visit_map(visitor)?;
-        Ok(Bson::from_extended_document(values))
+        let values = DocumentVisitor::new().visit_map(visitor)?;
+        Ok(Bson::from_extended_document(values.into()))
     }
 
     #[inline]
@@ -591,7 +591,7 @@ impl<'de> SeqAccess<'de> for SeqDecoder {
 }
 
 struct MapDecoder {
-    iter: OrderedDocumentIntoIterator,
+    iter: IntoIter<String, Bson>,
     value: Option<Bson>,
     len: usize,
 }
