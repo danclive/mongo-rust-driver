@@ -171,10 +171,10 @@ pub struct ClientOptions {
     /// Note that by default, the driver will autodiscover other nodes in the cluster. To connect
     /// directly to a single server (rather than autodiscovering the rest of the cluster), set the
     /// `direct` field to `true`.
-    #[builder(default_code = "vec![ StreamAddress {
-        hostname: \"localhost\".to_string(),
-        port: Some(27017),
-    }]")]
+    // #[builder(default_code = "vec![ StreamAddress {
+    //     hostname: \"localhost\".to_string(),
+    //     port: Some(27017),
+    // }]")]
     pub hosts: Vec<StreamAddress>,
 
     /// The application name that the Client will send to the server as part of the handshake. This
@@ -319,7 +319,12 @@ pub struct ClientOptions {
 
 impl Default for ClientOptions {
     fn default() -> Self {
-        Self::builder().build()
+        Self::builder()
+            .hosts(vec![StreamAddress {
+                    hostname: "localhost".to_string(),
+                    port: Some(27017),
+                }])
+            .build()
     }
 }
 
@@ -467,7 +472,7 @@ impl TlsOptions {
             };
 
             // TODO: Get rid of unwrap
-            config.set_single_client_cert(certs, key.into_iter().next().unwrap());
+            let _ = config.set_single_client_cert(certs, key.into_iter().next().unwrap());
         }
 
         Ok(config)
@@ -1267,7 +1272,7 @@ impl ClientOptionsParser {
                     None => {
                         self.tls = Some(Tls::Enabled(
                             TlsOptions::builder()
-                                .allow_invalid_certificates(allow_invalid_certificates)
+                                .allow_invalid_certificates(Some(allow_invalid_certificates))
                                 .build(),
                         ))
                     }
@@ -1286,7 +1291,7 @@ impl ClientOptionsParser {
                 None => {
                     self.tls = Some(Tls::Enabled(
                         TlsOptions::builder()
-                            .ca_file_path(value.to_string())
+                            .ca_file_path(Some(value.to_string()))
                             .build(),
                     ))
                 }
@@ -1304,7 +1309,7 @@ impl ClientOptionsParser {
                 None => {
                     self.tls = Some(Tls::Enabled(
                         TlsOptions::builder()
-                            .cert_key_file_path(value.to_string())
+                            .cert_key_file_path(Some(value.to_string()))
                             .build(),
                     ))
                 }
@@ -1517,7 +1522,7 @@ mod tests {
     #[test]
     fn with_w_non_negative_int() {
         let uri = "mongodb://localhost:27017/?w=1";
-        let write_concern = WriteConcern::builder().w(Acknowledgment::from(1)).build();
+        let write_concern = WriteConcern::builder().w(Some(Acknowledgment::from(1))).build();
 
         assert_eq!(
             ClientOptions::parse(uri).unwrap(),
@@ -1537,7 +1542,7 @@ mod tests {
     fn with_w_string() {
         let uri = "mongodb://localhost:27017/?w=foo";
         let write_concern = WriteConcern::builder()
-            .w(Acknowledgment::from("foo".to_string()))
+            .w(Some(Acknowledgment::from("foo".to_string())))
             .build();
 
         assert_eq!(
@@ -1562,7 +1567,7 @@ mod tests {
     #[test]
     fn with_j() {
         let uri = "mongodb://localhost:27017/?journal=true";
-        let write_concern = WriteConcern::builder().journal(true).build();
+        let write_concern = WriteConcern::builder().journal(Some(true)).build();
 
         assert_eq!(
             ClientOptions::parse(uri).unwrap(),
@@ -1592,7 +1597,7 @@ mod tests {
     fn with_wtimeout() {
         let uri = "mongodb://localhost:27017/?wtimeoutMS=27";
         let write_concern = WriteConcern::builder()
-            .w_timeout(Duration::from_millis(27))
+            .w_timeout(Some(Duration::from_millis(27)))
             .build();
 
         assert_eq!(
@@ -1613,9 +1618,9 @@ mod tests {
     fn with_all_write_concern_options() {
         let uri = "mongodb://localhost:27017/?w=majority&journal=false&wtimeoutMS=27";
         let write_concern = WriteConcern::builder()
-            .w(Acknowledgment::Majority)
-            .journal(false)
-            .w_timeout(Duration::from_millis(27))
+            .w(Some(Acknowledgment::Majority))
+            .journal(Some(false))
+            .w_timeout(Some(Duration::from_millis(27)))
             .build();
 
         assert_eq!(
@@ -1643,9 +1648,9 @@ mod tests {
                    ny,rack:1&serverselectiontimeoutms=2000&readpreferencetags=dc:ny&\
                    readpreferencetags=";
         let write_concern = WriteConcern::builder()
-            .w(Acknowledgment::Majority)
-            .journal(false)
-            .w_timeout(Duration::from_millis(27))
+            .w(Some(Acknowledgment::Majority))
+            .journal(Some(false))
+            .w_timeout(Some(Duration::from_millis(27)))
             .build();
 
         assert_eq!(

@@ -201,13 +201,13 @@ fn auth_test(client: Client, should_succeed: bool) {
 fn auth_test_options(user: &str, password: &str, mechanism: Option<AuthMechanism>, success: bool) {
     let options = ClientOptions::builder()
         .hosts(CLIENT.options.hosts.clone())
-        .max_pool_size(1)
-        .credential(Credential {
+        .max_pool_size(Some(1))
+        .credential(Some(Credential {
             username: Some(user.to_string()),
             password: Some(password.to_string()),
             mechanism,
             ..Default::default()
-        })
+        }))
         .tls(CLIENT.options.tls.clone())
         .build();
 

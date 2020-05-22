@@ -1,8 +1,8 @@
 use chrono::offset::Utc;
-use hex;
 
 use mongors::bson::{oid::ObjectId, spec::BinarySubtype, Binary, Bson, Regex, TimeStamp};
 use mongors::doc;
+use mongors::util::hex::ToHex;
 
 #[test]
 fn standard_format() {
@@ -42,8 +42,8 @@ fn standard_format() {
          with_wrapped_parens: -20, code: function(x) {{ return x._id; }}, i32: 12, i64: -55, \
          timestamp: Timestamp(0, 229999444), binary: BinData(5, 0x{}), _id: ObjectId(\"{}\"), \
          date: Date(\"{}\") }}",
-        hex::encode("thingies"),
-        hex::encode(id_string),
+        "thingies".to_hex(),
+        id_string.to_hex(),
         date
     );
 
@@ -89,8 +89,8 @@ fn rocket_format() {
          with_wrapped_parens: -20, code: function(x) {{ return x._id; }}, i32: 12, i64: -55, \
          timestamp: Timestamp(0, 229999444), binary: BinData(5, 0x{}), _id: ObjectId(\"{}\"), \
          date: Date(\"{}\") }}",
-        hex::encode("thingies"),
-        hex::encode(id_string),
+        "thingies".to_hex(),
+        id_string.to_hex(),
         date
     );
 

@@ -23,7 +23,7 @@ fn build_many() {
         w: Some(Acknowledgment::Majority),
         ..Default::default()
     };
-    let options = DeleteOptions::builder().write_concern(wc).build();
+    let options = DeleteOptions::builder().write_concern(Some(wc)).build();
 
     let op = Delete::new(ns, filter.clone(), None, Some(options));
 
@@ -66,7 +66,7 @@ fn build_one() {
         w: Some(Acknowledgment::Majority),
         ..Default::default()
     };
-    let options = DeleteOptions::builder().write_concern(wc).build();
+    let options = DeleteOptions::builder().write_concern(Some(wc)).build();
 
     let op = Delete::new(ns, filter.clone(), Some(1), Some(options));
 

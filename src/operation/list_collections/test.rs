@@ -105,7 +105,7 @@ fn build_batch_size() {
         },
     );
 
-    let options = ListCollectionsOptions::builder().batch_size(123).build();
+    let options = ListCollectionsOptions::builder().batch_size(Some(123)).build();
     let list_collections = ListCollections::new("test_db".to_string(), None, true, Some(options));
     build_test(
         "test_db",
@@ -186,7 +186,7 @@ fn handle_success() {
         "test_db".to_string(),
         None,
         false,
-        Some(ListCollectionsOptions::builder().batch_size(123).build()),
+        Some(ListCollectionsOptions::builder().batch_size(Some(123)).build()),
     );
     let cursor_spec = list_collections
         .handle_response(CommandResponse::with_document_and_address(

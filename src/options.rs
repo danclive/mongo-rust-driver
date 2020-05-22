@@ -10,8 +10,8 @@
 //! # use mongors::options::FindOptions;
 //! #
 //! # let options = FindOptions::builder()
-//! #                   .limit(20)
-//! #                   .batch_size(5)
+//! #                   .limit(Some(20))
+//! #                   .batch_size(Some(5))
 //! #                   .build();
 //! ```
 

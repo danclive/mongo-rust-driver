@@ -29,11 +29,11 @@ fn run_test(name: &str, test: impl Fn(EventClient, Database, Collection)) {
     let db = client.database(&name);
     let coll = db.collection(&name);
 
-    let wc_majority = WriteConcern::builder().w(Acknowledgment::Majority).build();
+    let wc_majority = WriteConcern::builder().w(Some(Acknowledgment::Majority)).build();
 
     let _ = coll.drop(Some(
         DropCollectionOptions::builder()
-            .write_concern(wc_majority.clone())
+            .write_concern(Some(wc_majority.clone()))
             .build(),
     ));
 
@@ -41,7 +41,7 @@ fn run_test(name: &str, test: impl Fn(EventClient, Database, Collection)) {
         &name,
         Some(
             CreateCollectionOptions::builder()
-                .write_concern(wc_majority)
+                .write_concern(Some(wc_majority))
                 .build(),
         ),
     )
@@ -66,14 +66,14 @@ fn get_more() {
             docs,
             Some(
                 InsertManyOptions::builder()
-                    .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
+                    .write_concern(Some(WriteConcern::builder().w(Some(Acknowledgment::Majority)).build()))
                     .build(),
             ),
         )
         .unwrap();
 
         let mut cursor = coll
-            .find(None, Some(FindOptions::builder().batch_size(2).build()))
+            .find(None, Some(FindOptions::builder().batch_size(Some(2)).build()))
             .unwrap();
 
         db.run_command(doc! { "replSetStepDown": 5, "force": true }, None)

@@ -45,7 +45,7 @@ fn run_insert_many_test(test_file: TestFile) {
             bson::from_bson(Bson::Document(test_case.outcome)).expect(&test_case.description);
 
         let options = InsertManyOptions::builder()
-            .ordered(arguments.options.ordered)
+            .ordered(Some(arguments.options.ordered))
             .build();
 
         let result = match coll.insert_many(arguments.documents, options) {

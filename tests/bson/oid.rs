@@ -1,12 +1,12 @@
 use mongors::bson::oid::ObjectId;
-use hex;
+use mongors::util::hex::ToHex;
 
 #[test]
 fn string_oid() {
     let s = "123456789012123456789012";
     let oid_res = ObjectId::with_string(s);
     assert!(oid_res.is_ok());
-    let actual_s = hex::encode(oid_res.unwrap().bytes());
+    let actual_s = oid_res.unwrap().bytes().to_hex();
     assert_eq!(s.to_owned(), actual_s);
 }
 

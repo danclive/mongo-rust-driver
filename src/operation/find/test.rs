@@ -42,10 +42,10 @@ fn build() {
     };
 
     let options = FindOptions::builder()
-        .hint(Hint::Keys(doc! { "x": 1, "y": 2 }))
-        .projection(doc! { "x": 0 })
-        .allow_partial_results(true)
-        .read_concern(ReadConcern::Available)
+        .hint(Some(Hint::Keys(doc! { "x": 1, "y": 2 })))
+        .projection(Some(doc! { "x": 0 }))
+        .allow_partial_results(Some(true))
+        .read_concern(Some(ReadConcern::Available))
         .build();
 
     let expected_body = doc! {
@@ -75,7 +75,7 @@ fn build_cursor_type() {
     };
 
     let non_tailable_options = FindOptions::builder()
-        .cursor_type(CursorType::NonTailable)
+        .cursor_type(Some(CursorType::NonTailable))
         .build();
 
     let non_tailable_body = doc! {
@@ -90,7 +90,7 @@ fn build_cursor_type() {
     );
 
     let tailable_options = FindOptions::builder()
-        .cursor_type(CursorType::Tailable)
+        .cursor_type(Some(CursorType::Tailable))
         .build();
 
     let tailable_body = doc! {
@@ -101,7 +101,7 @@ fn build_cursor_type() {
     build_test(ns.clone(), None, Some(tailable_options), tailable_body);
 
     let tailable_await_options = FindOptions::builder()
-        .cursor_type(CursorType::TailableAwait)
+        .cursor_type(Some(CursorType::TailableAwait))
         .build();
 
     let tailable_await_body = doc! {
@@ -121,8 +121,8 @@ fn build_max_await_time() {
     };
 
     let options = FindOptions::builder()
-        .max_await_time(Duration::from_millis(5))
-        .max_time(Duration::from_millis(10))
+        .max_await_time(Some(Duration::from_millis(5)))
+        .max_time(Some(Duration::from_millis(10)))
         .build();
 
     let body = doc! {
@@ -140,7 +140,7 @@ fn build_limit() {
         coll: "test_coll".to_string(),
     };
 
-    let positive_options = FindOptions::builder().limit(5).build();
+    let positive_options = FindOptions::builder().limit(Some(5)).build();
 
     let positive_body = doc! {
         "find": "test_coll",
@@ -149,7 +149,7 @@ fn build_limit() {
 
     build_test(ns.clone(), None, Some(positive_options), positive_body);
 
-    let negative_options = FindOptions::builder().limit(-5).build();
+    let negative_options = FindOptions::builder().limit(Some(-5)).build();
 
     let negative_body = doc! {
         "find": "test_coll",
@@ -162,7 +162,7 @@ fn build_limit() {
 
 #[test]
 fn build_batch_size() {
-    let options = FindOptions::builder().batch_size(1).build();
+    let options = FindOptions::builder().batch_size(Some(1)).build();
     let body = doc! {
         "find": "",
         "batchSize": 1
@@ -170,7 +170,7 @@ fn build_batch_size() {
     build_test(Namespace::empty(), None, Some(options), body);
 
     let options = FindOptions::builder()
-        .batch_size((std::i32::MAX as u32) + 1)
+        .batch_size(Some((std::i32::MAX as u32) + 1))
         .build();
     let op = Find::new(Namespace::empty(), None, Some(options));
     assert!(op.build(&StreamDescription::new_testing()).is_err())
@@ -230,7 +230,7 @@ fn handle_success() {
     let find = Find::new(
         ns,
         None,
-        Some(FindOptions::builder().batch_size(123).build()),
+        Some(FindOptions::builder().batch_size(Some(123)).build()),
     );
     let result = find.handle_response(CommandResponse::with_document_and_address(
         address.clone(),

@@ -59,7 +59,7 @@ fn build_with_query() {
 fn build_with_options() {
     let field_name = "field_name".to_string();
     let max_time = Duration::new(2 as u64, 0);
-    let options: DistinctOptions = DistinctOptions::builder().max_time(max_time).build();
+    let options: DistinctOptions = DistinctOptions::builder().max_time(Some(max_time)).build();
     let ns = Namespace {
         db: "test_db".to_string(),
         coll: "test_coll".to_string(),

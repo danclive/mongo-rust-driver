@@ -25,7 +25,7 @@ fn fixtures() -> TestFixtures {
 
     let options = InsertManyOptions {
         ordered: Some(true),
-        write_concern: Some(WriteConcern::builder().journal(true).build()),
+        write_concern: Some(WriteConcern::builder().journal(Some(true)).build()),
         ..Default::default()
     };
 
@@ -116,7 +116,7 @@ fn build_ordered() {
     let insert = Insert::new(
         Namespace::empty(),
         Vec::new(),
-        Some(InsertManyOptions::builder().ordered(false).build()),
+        Some(InsertManyOptions::builder().ordered(Some(false)).build()),
     );
     let cmd = insert
         .build(&StreamDescription::new_testing())
@@ -126,7 +126,7 @@ fn build_ordered() {
     let insert = Insert::new(
         Namespace::empty(),
         Vec::new(),
-        Some(InsertManyOptions::builder().ordered(true).build()),
+        Some(InsertManyOptions::builder().ordered(Some(true)).build()),
     );
     let cmd = insert
         .build(&StreamDescription::new_testing())

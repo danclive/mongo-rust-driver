@@ -189,7 +189,7 @@ pub struct ConnectionCheckedInEvent {
 /// #         CmapEventHandler,
 /// #         ConnectionCheckoutFailedEvent
 /// #     },
-/// #     options::ClientOptions,
+/// #     options::{ClientOptions, StreamAddress},
 /// #     Client,
 /// # };
 /// #
@@ -204,7 +204,11 @@ pub struct ConnectionCheckedInEvent {
 /// # fn do_stuff() -> Result<()> {
 /// let handler: Arc<dyn CmapEventHandler> = Arc::new(FailedCheckoutLogger);
 /// let options = ClientOptions::builder()
-///                   .cmap_event_handler(handler)
+///                   .hosts(vec![StreamAddress {
+///                            hostname: "localhost".to_string(),
+///                           port: Some(27017),
+///                        }])
+///                   .cmap_event_handler(Some(handler))
 ///                   .build();
 /// let client = Client::with_options(options)?;
 ///

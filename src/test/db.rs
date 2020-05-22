@@ -175,8 +175,8 @@ fn collection_management() {
         .unwrap();
 
     let options = CreateCollectionOptions::builder()
-        .capped(true)
-        .size(512)
+        .capped(Some(true))
+        .size(Some(512))
         .build();
     db.create_collection(&format!("{}{}", function_name!(), 2), Some(options))
         .unwrap();
@@ -272,7 +272,7 @@ fn db_aggregate_disk_use() {
         },
     ];
 
-    let options = AggregateOptions::builder().allow_disk_use(true).build();
+    let options = AggregateOptions::builder().allow_disk_use(Some(true)).build();
 
     let result = db.aggregate(pipeline, Some(options));
     result.unwrap();

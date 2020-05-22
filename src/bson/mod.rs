@@ -25,9 +25,7 @@ use std::{
 };
 
 use chrono::{offset::TimeZone, DateTime, Timelike, Utc};
-use hex;
 use serde_json::{json, Value};
-
 
 #[cfg(feature = "decimal128")]
 pub use self::decimal128::Decimal128;
@@ -35,6 +33,9 @@ pub use self::decoder::{decode_document, decode_document_utf8_lossy, from_bson, 
 pub use self::encoder::{encode_document, to_bson, Encoder, EncoderError, EncoderResult};
 pub use self::doc::{Document, ValueAccessError, ValueAccessResult};
 pub use self::spec::{BinarySubtype, ElementType};
+pub use self::oid::ObjectId;
+
+use crate::util::hex::{ToHex, FromHex};
 
 #[macro_use]
 pub mod macros;
@@ -136,7 +137,7 @@ impl Display for Bson {
                 fmt,
                 "BinData({}, 0x{})",
                 u8::from(subtype),
-                hex::encode(bytes)
+                bytes.to_hex()
             ),
             Bson::ObjectId(ref id) => write!(fmt, "ObjectId(\"{}\")", id),
             Bson::UtcDatetime(date_time) => write!(fmt, "Date(\"{}\")", date_time),
@@ -334,7 +335,7 @@ impl From<Bson> for Value {
                 let tval: u8 = From::from(subtype);
                 json!({
                     "type": tval,
-                    "$binary": hex::encode(bytes),
+                    "$binary": bytes.to_hex(),
                 })
             }
             Bson::ObjectId(v) => json!({"$oid": v.to_string()}),
@@ -413,7 +414,7 @@ impl Bson {
             Bson::Binary(Binary { subtype, ref bytes }) => {
                 let tval: u8 = From::from(subtype);
                 doc! {
-                    "$binary": hex::encode(bytes),
+                    "$binary": bytes.to_hex(),
                     "type": tval as i64,
                 }
             }
@@ -550,7 +551,7 @@ impl Bson {
                 let ttype = t as u8;
                 return Bson::Binary(Binary {
                     subtype: From::from(ttype),
-                    bytes: hex::decode(hex.as_bytes())
+                    bytes: FromHex::from_hex(hex.as_bytes())
                         .expect("$binary value is not a valid Hex encoded bytes"),
                 });
             }

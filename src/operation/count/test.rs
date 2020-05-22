@@ -34,8 +34,8 @@ fn build_with_options() {
     let read_concern = ReadConcern::Local;
     let max_time = Duration::from_millis(2 as u64);
     let options: EstimatedDocumentCountOptions = EstimatedDocumentCountOptions::builder()
-        .max_time(max_time)
-        .read_concern(read_concern.clone())
+        .max_time(Some(max_time))
+        .read_concern(Some(read_concern.clone()))
         .build();
     let ns = Namespace {
         db: "test_db".to_string(),

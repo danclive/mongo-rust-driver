@@ -1,7 +1,6 @@
 //! ObjectId
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::ffi::CStr;
 use std::{io, fmt, result, error};
 
 use byteorder::{ByteOrder, BigEndian, LittleEndian};
@@ -130,6 +129,14 @@ impl ObjectId {
     pub fn to_hex(&self) -> String {
         self.bytes.to_hex()
     }
+
+    pub fn zero() -> ObjectId {
+        ObjectId { bytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self == &ObjectId::zero()
+    }
 }
 
 impl Default for ObjectId {
@@ -163,20 +170,6 @@ fn timestamp() -> [u8; 4] {
 }
 
 #[inline]
-fn hosename() -> Option<String> {
-    let mut buf = [0u8; 255];
-    let ptr = buf.as_mut_ptr() as *mut libc::c_char;
-
-    unsafe {
-        if libc::gethostname(ptr, buf.len() as libc::size_t) != 0 {
-            return None;
-        }
-
-        Some(CStr::from_ptr(ptr).to_string_lossy().to_string())
-    }
-}
-
-#[inline]
 fn machine_id() -> [u8; 3] {
     unsafe {
         if let Some(bytes) = MACHINE_BYTES.as_ref() {
@@ -184,9 +177,9 @@ fn machine_id() -> [u8; 3] {
         }
     }
 
-    let hostname = hosename().expect("Can't get hostname!");
+    let hostname = hostname::get().expect("Can't get hostname!");
 
-    let bytes = format!("{:x}", md5::compute(hostname.as_bytes()));
+    let bytes = format!("{:x}", md5::compute(hostname.to_string_lossy().as_bytes()));
     let bytes = bytes.as_bytes();
 
     let mut buf = [0u8; 3];

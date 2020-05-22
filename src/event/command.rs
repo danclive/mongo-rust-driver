@@ -82,7 +82,7 @@ pub struct CommandFailedEvent {
 /// #         CommandEventHandler,
 /// #         CommandFailedEvent
 /// #     },
-/// #     options::ClientOptions,
+/// #     options::{ClientOptions, StreamAddress},
 /// #     Client,
 /// # };
 /// #
@@ -97,7 +97,11 @@ pub struct CommandFailedEvent {
 /// # fn do_stuff() -> Result<()> {
 /// let handler: Arc<dyn CommandEventHandler> = Arc::new(FailedCommandLogger);
 /// let options = ClientOptions::builder()
-///                   .command_event_handler(handler)
+///                   .hosts(vec![StreamAddress {
+///                            hostname: "localhost".to_string(),
+///                           port: Some(27017),
+///                        }])
+///                   .command_event_handler(Some(handler))
 ///                   .build();
 /// let client = Client::with_options(options)?;
 ///

@@ -44,9 +44,9 @@ fn build() {
     let pipeline = vec![doc! { "$match": { "x": 3 }}];
 
     let options = AggregateOptions::builder()
-        .hint(Hint::Keys(doc! { "x": 1, "y": 2 }))
-        .bypass_document_validation(true)
-        .read_concern(ReadConcern::Available)
+        .hint(Some(Hint::Keys(doc! { "x": 1, "y": 2 })))
+        .bypass_document_validation(Some(true))
+        .read_concern(Some(ReadConcern::Available))
         .build();
 
     let expected_body = doc! {
@@ -90,7 +90,7 @@ fn build_batch_size() {
         expected_body.clone(),
     );
 
-    let batch_size_options = AggregateOptions::builder().batch_size(5).build();
+    let batch_size_options = AggregateOptions::builder().batch_size(Some(5)).build();
     expected_body.insert("cursor", doc! { "batchSize": 5 });
     build_test(
         ns.clone(),
@@ -145,8 +145,8 @@ fn build_target() {
 #[test]
 fn build_max_await_time() {
     let options = AggregateOptions::builder()
-        .max_await_time(Duration::from_millis(5))
-        .max_time(Duration::from_millis(10))
+        .max_await_time(Some(Duration::from_millis(5)))
+        .max_time(Some(Duration::from_millis(10)))
         .build();
 
     let body = doc! {
@@ -215,8 +215,8 @@ fn handle_success() {
         Vec::new(),
         Some(
             AggregateOptions::builder()
-                .batch_size(123)
-                .max_await_time(Duration::from_millis(5))
+                .batch_size(Some(123))
+                .max_await_time(Some(Duration::from_millis(5)))
                 .build(),
         ),
     );
@@ -260,7 +260,7 @@ fn handle_max_await_time() {
 
     let max_await = Duration::from_millis(123);
     let options = AggregateOptions::builder()
-        .max_await_time(max_await)
+        .max_await_time(Some(max_await))
         .build();
     let aggregate = Aggregate::new(Namespace::empty(), Vec::new(), Some(options));
     let spec = aggregate

@@ -80,7 +80,7 @@ fn update() {
     assert_eq!(update_many_results.modified_count, 4);
     assert!(update_many_results.upserted_id.is_none());
 
-    let options = UpdateOptions::builder().upsert(true).build();
+    let options = UpdateOptions::builder().upsert(Some(true)).build();
     let upsert_results = coll
         .update_one(doc! {"b": 7}, doc! {"$set": { "b": 7 }}, options)
         .unwrap();
@@ -144,7 +144,7 @@ fn aggregate_out() {
     drop_collection(&out_coll);
 
     // check that even with a batch size of 0, a new collection is created.
-    coll.aggregate(pipeline, AggregateOptions::builder().batch_size(0).build())
+    coll.aggregate(pipeline, AggregateOptions::builder().batch_size(Some(0)).build())
         .unwrap();
     assert!(db
         .list_collection_names(None)
@@ -186,7 +186,7 @@ fn kill_cursors_on_drop() {
         .collection(function_name!());
 
     let cursor = coll
-        .find(None, FindOptions::builder().batch_size(1).build())
+        .find(None, FindOptions::builder().batch_size(Some(1)).build())
         .unwrap();
 
     assert!(!kill_cursors_sent(&event_client));
@@ -321,7 +321,7 @@ fn large_insert_unordered_with_errors() {
     let docs = multibatch_documents_with_duplicate_keys();
 
     let coll = CLIENT.init_db_and_coll(function_name!(), function_name!());
-    let options = InsertManyOptions::builder().ordered(false).build();
+    let options = InsertManyOptions::builder().ordered(Some(false)).build();
 
     match coll
         .insert_many(docs, options)
@@ -353,7 +353,7 @@ fn large_insert_ordered_with_errors() {
     let docs = multibatch_documents_with_duplicate_keys();
 
     let coll = CLIENT.init_db_and_coll(function_name!(), function_name!());
-    let options = InsertManyOptions::builder().ordered(true).build();
+    let options = InsertManyOptions::builder().ordered(Some(true)).build();
 
     match coll
         .insert_many(docs, options)
